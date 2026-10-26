@@ -38,6 +38,11 @@ export const tuning = {
       'a few unexpected ideas worth discovering',
     ],
     initialPerAngle: 10,
+    /**
+     * A small extra batch sent with the initial burst. Generation time scales
+     * with output, so 4 dishes arrive in about half the time of 10.
+     */
+    quickStart: { angle: 'crowd-pleasing favourites almost everyone enjoys', count: 4 },
     followUpSize: 10,
     followUpParallel: 2,
     /** Verdicts in a meal after which a follow-up batch is requested. */

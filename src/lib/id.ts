@@ -18,19 +18,3 @@ export function stableHash(input: string): string {
   const hi = (h2 >>> 0) & 0x1fffff;
   return (hi * 0x100000000 + (h1 >>> 0)).toString(36);
 }
-
-/** Lowercases the host, drops hash, tracking params and trailing slash. */
-export function normalizeUrl(raw: string): string {
-  try {
-    const url = new URL(raw.trim());
-    url.hash = '';
-    url.hostname = url.hostname.toLowerCase().replace(/^www\./, '');
-    for (const key of [...url.searchParams.keys()]) {
-      if (/^(utm_|fbclid|gclid|mc_)/i.test(key)) url.searchParams.delete(key);
-    }
-    const path = url.pathname.replace(/\/+$/, '');
-    return `${url.protocol}//${url.hostname}${path}${url.search}`;
-  } catch {
-    return raw.trim().toLowerCase();
-  }
-}

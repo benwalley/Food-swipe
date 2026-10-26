@@ -161,7 +161,7 @@ export function TasteScreen() {
         </Section>
 
         <p className="px-2 text-center text-xs leading-relaxed text-ink-3">
-          Ideas found by {sourceLabel}.
+          Ideas from {sourceLabel}.
         </p>
       </div>
 

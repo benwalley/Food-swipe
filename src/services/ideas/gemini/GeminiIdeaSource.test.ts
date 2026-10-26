@@ -1,23 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import type { Brief } from '@/domain/brief';
 import { IdeaSourceError } from '../IdeaSource';
-import { extractSearchSuggestions, parseDishes, toIdeaError } from './GeminiIdeaSource';
+import { parseDishes, toIdeaError } from './GeminiIdeaSource';
 import { geminiResponseSchema } from './schema';
 
 const brief = { meal: 'dinner', count: 10 } as Brief;
-const batch = {
-  id: 'b1',
-  meal: 'dinner' as const,
-  requestedAt: '2026-10-26T00:00:00.000Z',
-  searchSuggestions: [],
-};
+const batch = { id: 'b1', meal: 'dinner' as const, requestedAt: '2026-10-26T00:00:00.000Z' };
 
 const good = {
   title: 'Thai Green Curry',
   description: 'Fragrant and creamy.',
-  recipeUrl: 'https://www.recipetineats.com/thai-green-curry/',
-  sourceName: 'RecipeTin Eats',
-  imageUrl: null,
   cuisine: 'Thai',
   ideaKey: 'Thai Curry',
   tags: ['Spicy'],
@@ -29,17 +21,9 @@ const good = {
 };
 
 describe('parseDishes', () => {
-  it('keeps valid dishes and drops invalid or redirect-linked ones', () => {
+  it('keeps valid dishes and drops invalid ones', () => {
     const output = JSON.stringify({
-      dishes: [
-        good,
-        { ...good, title: 'Broken', ingredients: 'nope' },
-        {
-          ...good,
-          title: 'Redirected',
-          recipeUrl: 'https://vertexaisearch.cloud.google.com/grounding-api-redirect/x',
-        },
-      ],
+      dishes: [good, { ...good, title: 'Broken', ingredients: 'nope' }, { ...good, title: '  ' }],
     });
     const dishes = parseDishes(output, brief, batch);
     expect(dishes).toHaveLength(1);
@@ -48,43 +32,41 @@ describe('parseDishes', () => {
       ideaKey: 'thai-curry',
       tags: ['spicy'],
       meal: 'dinner',
+      imageUrl: null,
       batchId: 'b1',
     });
   });
 
-  it('gives the same dish the same id regardless of URL noise', () => {
+  it('gives the same dish the same id regardless of title punctuation or case', () => {
     const a = parseDishes(JSON.stringify({ dishes: [good] }), brief, batch)[0]!;
     const b = parseDishes(
-      JSON.stringify({
-        dishes: [{ ...good, recipeUrl: 'https://recipetineats.com/thai-green-curry?utm_source=x' }],
-      }),
+      JSON.stringify({ dishes: [{ ...good, title: 'thai green curry!' }] }),
       brief,
       batch,
     )[0]!;
     expect(a.id).toBe(b.id);
   });
 
+  it('dedupes ingredients by family and drops absurd times', () => {
+    const output = JSON.stringify({
+      dishes: [
+        {
+          ...good,
+          totalMinutes: 99999,
+          ingredients: [
+            ...good.ingredients,
+            { name: 'chicken breast', family: 'Chicken', role: 'main' },
+          ],
+        },
+      ],
+    });
+    const [dish] = parseDishes(output, brief, batch);
+    expect(dish!.ingredients.map((i) => i.family)).toEqual(['chicken', 'coconut']);
+    expect(dish!.totalMinutes).toBeNull();
+  });
+
   it('rejects non-JSON output', () => {
     expect(() => parseDishes('not json', brief, batch)).toThrow(IdeaSourceError);
-  });
-});
-
-describe('extractSearchSuggestions', () => {
-  it('collects unique suggestion snippets from search result steps', () => {
-    const steps = [
-      { type: 'google_search_call', id: '1', arguments: {} },
-      {
-        type: 'google_search_result',
-        call_id: '1',
-        result: [{ search_suggestions: '<div>a</div>' }],
-      },
-      {
-        type: 'google_search_result',
-        call_id: '2',
-        result: [{ search_suggestions: '<div>a</div>' }, { search_suggestions: '<div>b</div>' }],
-      },
-    ];
-    expect(extractSearchSuggestions({ steps } as never)).toEqual(['<div>a</div>', '<div>b</div>']);
   });
 });
 

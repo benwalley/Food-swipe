@@ -1,6 +1,6 @@
 # Food Swipe
 
-Decide what to eat by swiping on meal ideas. Gemini searches the web for real recipes, learns from your swipes, and keeps bringing better ideas.
+Decide what to eat by swiping on meal ideas. Gemini suggests dishes from its own knowledge, learns from your swipes, and keeps bringing better ideas. "Find a recipe" opens a web search for any dish.
 
 - **Swipe right**: into the idea, more like it
 - **Swipe left**: nah (drag far left: never show this dish)
@@ -43,7 +43,7 @@ VITE_IDEA_SOURCE=fixtures npm run dev
 | Variable | Default | Purpose |
 | --- | --- | --- |
 | `VITE_GEMINI_API_KEY` | none | Gemini API key. Bundled into the client, so never deploy a build with a real key publicly. |
-| `VITE_GEMINI_MODEL` | `gemini-3.8-flash` | Model used to research ideas. |
+| `VITE_GEMINI_MODEL` | `gemini-3.8-flash` | Model that suggests ideas. |
 | `VITE_IDEA_SOURCE` | `gemini` | `gemini` for live ideas, `fixtures` for offline samples. |
 
 ## Scripts
@@ -105,5 +105,4 @@ Rules the code follows:
 ## Before a public launch
 
 - **Move AI calls server-side.** Any client build contains the API key.
-- **Review Google's grounding terms.** Search suggestions are shown with results as required, but the terms also restrict storing and reformatting grounded results.
-- **Pick a photo source.** Gemini's search returns images for only some dishes; the rest use designed placeholders.
+- **Pick a photo source.** Ideas come without photos; cards use designed placeholders until then.

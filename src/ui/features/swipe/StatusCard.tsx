@@ -18,7 +18,7 @@ function Shell({ children }: { children: ReactNode }) {
 }
 
 const LOADING_LINES = (meal: string) => [
-  `Searching recipe sites for ${meal} ideas`,
+  `Thinking up ${meal} ideas`,
   'Reading your taste',
   'Checking ingredients against your nevers',
   'Plating up the first cards',
@@ -58,7 +58,7 @@ export function LoadingCard({ meal }: { meal: Meal }) {
       >
         {lines[index]}…
       </motion.p>
-      <p className="mt-6 text-xs text-ink-3">The first batch takes about 20 seconds.</p>
+      <p className="mt-6 text-xs text-ink-3">The first ideas take about 10 seconds.</p>
     </Shell>
   );
 }

@@ -16,8 +16,8 @@ export function metaLine(dish: Dish): string {
 export function formatSavedDate(iso: string, now = new Date()): string {
   const date = new Date(iso);
   const days = Math.floor((now.getTime() - date.getTime()) / 86_400_000);
-  if (days <= 0) return 'Today';
-  if (days === 1) return 'Yesterday';
+  if (days <= 0) return 'today';
+  if (days === 1) return 'yesterday';
   if (days < 7) return `${days} days ago`;
-  return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  return `on ${date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}`;
 }

@@ -14,10 +14,7 @@ describe('LocalStorageRepository', () => {
     await repo.appendEvent(makeEvent('d1', 'into', 's1', '2026-10-26T00:00:00.000Z'));
     await repo.setPref('mushroom', pref('Mushrooms', 'never'));
     await repo.setSaved('d1', { dishId: 'd1', savedAt: '2026-10-26T00:00:00.000Z' });
-    await repo.putDishes(
-      [dish],
-      [{ id: 'batch-1', meal: 'dinner', requestedAt: 'x', searchSuggestions: ['<b>s</b>'] }],
-    );
+    await repo.putDishes([dish], [{ id: 'batch-1', meal: 'dinner', requestedAt: 'x' }]);
     await repo.setSession(session);
     await repo.setOnboarded(true);
     await repo.flush();
@@ -27,7 +24,7 @@ describe('LocalStorageRepository', () => {
     expect(reloaded.prefs.mushroom?.pref).toBe('never');
     expect(reloaded.saved.d1?.dishId).toBe('d1');
     expect(reloaded.dishes.d1?.title).toBe(dish.title);
-    expect(reloaded.batches['batch-1']?.searchSuggestions).toEqual(['<b>s</b>']);
+    expect(reloaded.batches['batch-1']?.meal).toBe('dinner');
     expect(reloaded.session?.id).toBe('s1');
     expect(reloaded.onboarded).toBe(true);
   });
@@ -46,8 +43,8 @@ describe('LocalStorageRepository', () => {
     await repo.putDishes(
       [makeDish({ id: 'keep', batchId: 'b1' }), makeDish({ id: 'drop', batchId: 'b2' })],
       [
-        { id: 'b1', meal: 'dinner', requestedAt: 'x', searchSuggestions: [] },
-        { id: 'b2', meal: 'dinner', requestedAt: 'x', searchSuggestions: [] },
+        { id: 'b1', meal: 'dinner', requestedAt: 'x' },
+        { id: 'b2', meal: 'dinner', requestedAt: 'x' },
       ],
     );
     await repo.pruneDishes(new Set(['keep']));

@@ -2,21 +2,18 @@ import { z } from 'zod';
 
 /** What Gemini must return. Validated per dish so one bad entry doesn't sink a batch. */
 export const aiDishSchema = z.object({
-  title: z.string().describe('Dish name, short and appetizing. No site name.'),
+  title: z.string().describe('The dish name people would search for, short and appetizing.'),
   description: z.string().describe('One enticing sentence, at most 120 characters.'),
-  recipeUrl: z.string().describe('Direct URL of a single recipe page from the search results.'),
-  sourceName: z.string().describe('Publisher name, e.g. "Serious Eats".'),
-  imageUrl: z.string().nullable().describe('Direct image URL of this exact dish, or null.'),
   cuisine: z.string().describe('One or two words, e.g. "Thai" or "Tex-Mex".'),
   ideaKey: z
     .string()
     .describe('Lowercase-hyphenated general idea shared by variations, e.g. "thai-curry".'),
   tags: z.array(z.string()).describe('Up to 4 lowercase descriptors, e.g. "one-pan".'),
-  totalMinutes: z.number().nullable().describe('Total time in minutes if known, else null.'),
+  totalMinutes: z.number().nullable().describe('Typical total time in minutes, or null.'),
   ingredients: z
     .array(
       z.object({
-        name: z.string().describe('As written, e.g. "cremini mushrooms".'),
+        name: z.string().describe('As usually written, e.g. "cremini mushrooms".'),
         family: z
           .string()
           .describe(

@@ -16,16 +16,15 @@ interface GeminiConfig {
 type Interaction = GoogleGenAIInteraction;
 
 /**
- * Researches meal ideas with Gemini + Google Search grounding and returns
- * validated dishes plus the search suggestions Google requires us to show
- * alongside grounded results.
+ * Asks Gemini for meal ideas from its own knowledge (no web search, so each
+ * batch costs a fraction of a cent) and returns validated dishes.
  */
 export class GeminiIdeaSource implements IdeaSource {
   readonly label: string;
   private client: GoogleGenAI | null = null;
 
   constructor(private readonly config: GeminiConfig) {
-    this.label = `Gemini (${config.model}) with Google Search`;
+    this.label = `Gemini (${config.model})`;
   }
 
   private getClient(): GoogleGenAI {
@@ -38,12 +37,7 @@ export class GeminiIdeaSource implements IdeaSource {
 
   async fetchBatch(brief: Brief, options: { signal?: AbortSignal } = {}): Promise<IdeaBatch> {
     const client = this.getClient();
-    const batch: Batch = {
-      id: newId(),
-      meal: brief.meal,
-      requestedAt: new Date().toISOString(),
-      searchSuggestions: [],
-    };
+    const batch: Batch = { id: newId(), meal: brief.meal, requestedAt: new Date().toISOString() };
 
     let interaction: Interaction;
     try {
@@ -52,7 +46,6 @@ export class GeminiIdeaSource implements IdeaSource {
           model: this.config.model,
           system_instruction: SYSTEM_INSTRUCTION,
           input: renderBrief(brief),
-          tools: [{ type: 'google_search' }],
           response_format: {
             type: 'text',
             mime_type: 'application/json',
@@ -75,25 +68,12 @@ export class GeminiIdeaSource implements IdeaSource {
       throw toIdeaError(error);
     }
 
-    batch.searchSuggestions = extractSearchSuggestions(interaction);
     const dishes = parseDishes(interaction.output_text ?? '', brief, batch);
     if (dishes.length === 0) {
       throw new IdeaSourceError('invalid-output', 'Gemini returned no usable dishes.');
     }
     return { batch, dishes };
   }
-}
-
-/** Google's display requirement: up to 5 suggestion snippets per grounded result. */
-export function extractSearchSuggestions(interaction: Pick<Interaction, 'steps'>): string[] {
-  const snippets = new Set<string>();
-  for (const step of interaction.steps ?? []) {
-    if (step.type !== 'google_search_result') continue;
-    for (const result of step.result ?? []) {
-      if (result.search_suggestions) snippets.add(result.search_suggestions);
-    }
-  }
-  return [...snippets].slice(0, 5);
 }
 
 export function parseDishes(outputText: string, brief: Brief, batch: Batch): Dish[] {

@@ -161,7 +161,13 @@ export function createAppStore(services: Services): AppStore {
       if (neverFetched && deck.queue.length === 0) {
         requestBatches(
           meal,
-          t.batches.initialAngles.map((angle) => ({ angle, count: t.batches.initialPerAngle })),
+          [
+            t.batches.quickStart,
+            ...t.batches.initialAngles.map((angle) => ({
+              angle,
+              count: t.batches.initialPerAngle,
+            })),
+          ],
           'back',
         );
         return;

@@ -19,12 +19,7 @@ export class FixtureIdeaSource implements IdeaSource {
 
   async fetchBatch(brief: Brief, { signal }: { signal?: AbortSignal } = {}): Promise<IdeaBatch> {
     await wait(this.options.delayMs ?? 700, signal);
-    const batch: Batch = {
-      id: newId(),
-      meal: brief.meal,
-      requestedAt: new Date().toISOString(),
-      searchSuggestions: [],
-    };
+    const batch: Batch = { id: newId(), meal: brief.meal, requestedAt: new Date().toISOString() };
     const avoid = new Set(brief.avoidTitles.map(normalizeTitle));
     const pool = (this.options.data ?? SAMPLE_DISHES)[brief.meal].filter(
       (d) => !avoid.has(normalizeTitle(d.title)),

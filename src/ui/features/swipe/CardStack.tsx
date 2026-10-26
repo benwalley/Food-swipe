@@ -23,7 +23,6 @@ export function CardStack({ meal, topRef }: CardStackProps) {
       .join('|'),
   );
   const dishes = useApp((s) => s.dishes);
-  const batches = useApp((s) => s.batches);
   const fetch = useApp((s) => s.fetch[meal]);
   const returning = useApp((s) => s.returning);
   const sessionId = useApp((s) => s.session.id);
@@ -56,7 +55,6 @@ export function CardStack({ meal, topRef }: CardStackProps) {
             key={dish.id}
             ref={isTop ? topRef : undefined}
             dish={dish}
-            batch={batches[dish.batchId]}
             memory={memoryLine(memory.get(dish.id), Boolean(saved[dish.id]), sessionId)}
             isTop={isTop}
             progress={progress}

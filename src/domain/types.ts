@@ -28,13 +28,12 @@ export interface Ingredient {
 }
 
 export interface Dish {
-  /** Stable hash of the normalized recipe URL. */
+  /** Stable hash of the meal and normalized title. */
   id: string;
   title: string;
   description: string;
   meal: Meal;
-  recipeUrl: string;
-  sourceName: string;
+  /** Reserved for a future photo source; ideas currently come without photos. */
   imageUrl: string | null;
   cuisine: string;
   /** Slug for the general idea, shared by variations (e.g. "thai-curry"). */
@@ -46,13 +45,11 @@ export interface Dish {
   fetchedAt: string;
 }
 
-/** One round of AI research. Holds the attribution shown with its dishes. */
+/** One round of idea generation; dishes keep a reference for diagnostics. */
 export interface Batch {
   id: string;
   meal: Meal;
   requestedAt: string;
-  /** Google Search suggestion snippets (HTML) that must be shown with results. */
-  searchSuggestions: string[];
 }
 
 export interface VerdictEvent {

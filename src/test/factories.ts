@@ -10,8 +10,6 @@ export function makeDish(overrides: Partial<Dish> & { id?: string } = {}): Dish 
     title: overrides.title ?? `Dish ${id}`,
     description: 'A tasty dish.',
     meal: 'dinner',
-    recipeUrl: `https://example.com/${id}`,
-    sourceName: 'Example',
     imageUrl: null,
     cuisine: 'Italian',
     ideaKey: overrides.ideaKey ?? `idea-${id}`,

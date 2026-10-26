@@ -5,7 +5,6 @@ import { MEAL_LABELS } from '@/domain/meals';
 import { MEALS, type Dish, type Meal } from '@/domain/types';
 import { useApp, useAppStore } from '@/state/hooks';
 import { DishArt } from '@/ui/components/DishArt';
-import { SearchSuggestions } from '@/ui/components/SearchSuggestions';
 import { Sheet } from '@/ui/components/Sheet';
 import { formatSavedDate, metaLine } from '@/ui/lib/format';
 import { IngredientRatings } from '../dish/IngredientRatings';
@@ -103,7 +102,7 @@ export function YourListScreen() {
                         {dish.title}
                       </p>
                       <p className="mt-0.5 truncate text-[13px] text-ink-3">
-                        {dish.sourceName} · {formatSavedDate(entry.savedAt)}
+                        Saved {formatSavedDate(entry.savedAt)}
                       </p>
                     </div>
                     <ChevronRight className="size-5 shrink-0 text-ink-3" />
@@ -122,7 +121,6 @@ export function YourListScreen() {
 
 function DishSheet({ dish, onClose }: { dish: Dish | undefined; onClose: () => void }) {
   const store = useAppStore();
-  const batch = useApp((s) => (dish ? s.batches[dish.batchId] : undefined));
   return (
     <Sheet open={Boolean(dish)} onClose={onClose} title={dish?.title ?? ''}>
       {dish && (
@@ -138,7 +136,6 @@ function DishSheet({ dish, onClose }: { dish: Dish | undefined; onClose: () => v
             <p className="smallcaps text-ink-3">How do you feel about…</p>
             <IngredientRatings dish={dish} />
           </section>
-          <SearchSuggestions snippets={batch?.searchSuggestions ?? []} />
           <button
             type="button"
             onClick={() => {

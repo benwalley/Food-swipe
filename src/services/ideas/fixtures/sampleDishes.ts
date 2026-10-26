@@ -336,9 +336,6 @@ function toRaw([title, cuisine, minutes, description, ingredients, tags = '']: R
   return {
     title,
     description,
-    recipeUrl: `https://example.com/recipes/${slug}`,
-    sourceName: 'Sample Kitchen',
-    imageUrl: null,
     cuisine,
     ideaKey: slug,
     tags: tags ? tags.split(',').map((t) => t.trim()) : [],

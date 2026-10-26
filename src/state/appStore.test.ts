@@ -38,7 +38,7 @@ describe('app store', () => {
     const { store, top } = setup();
     await store.getState().init();
     expect(store.getState().meal).toBe('dinner');
-    expect(store.getState().fetch.dinner.inFlight).toBe(tuning.batches.initialAngles.length);
+    expect(store.getState().fetch.dinner.inFlight).toBe(tuning.batches.initialAngles.length + 1);
     await settle();
     expect(store.getState().fetch.dinner.inFlight).toBe(0);
     expect(top()).toBeDefined();

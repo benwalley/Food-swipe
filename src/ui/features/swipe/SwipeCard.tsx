@@ -12,7 +12,7 @@ import {
 import { useImperativeHandle, useLayoutEffect, useRef, useState, type Ref } from 'react';
 import { tuning } from '@/config/tuning';
 import type { MemoryLine } from '@/domain/memory';
-import type { Batch, Dish, Verdict } from '@/domain/types';
+import type { Dish, Verdict } from '@/domain/types';
 import { tick } from '@/ui/lib/haptics';
 import { CardBack, CardFront } from './CardFace';
 import { Stamp } from './Stamp';
@@ -24,7 +24,6 @@ export interface SwipeCardHandle {
 
 interface SwipeCardProps {
   dish: Dish;
-  batch: Batch | undefined;
   memory: MemoryLine | null;
   isTop: boolean;
   /** Shared 0→1 drag progress so the card behind can grow into place. */
@@ -46,7 +45,6 @@ function exitTarget(verdict: Verdict, vw: number, vh: number) {
 
 export function SwipeCard({
   dish,
-  batch,
   memory,
   isTop,
   progress,
@@ -210,7 +208,7 @@ export function SwipeCard({
             className="absolute inset-0 [transform:rotateY(180deg)] overflow-hidden rounded-[28px] bg-surface shadow-card [backface-visibility:hidden]"
             aria-hidden={!flipped}
           >
-            {(flipped || isTop) && <CardBack dish={dish} batch={batch} onFlip={flip} />}
+            {(flipped || isTop) && <CardBack dish={dish} onFlip={flip} />}
           </div>
         </motion.div>
 

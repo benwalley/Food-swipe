@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { buildBrief } from '@/domain/brief';
+import { hasNeverIngredient } from '@/domain/ingredients';
 import { createSession } from '@/domain/session';
 import { GeminiIdeaSource } from './GeminiIdeaSource';
 
@@ -10,38 +11,40 @@ import { GeminiIdeaSource } from './GeminiIdeaSource';
 const key = process.env.GEMINI_LIVE_KEY;
 
 describe.skipIf(!key)('GeminiIdeaSource (live)', () => {
-  it('returns real, validated dinner ideas with search attribution', async () => {
+  it('returns validated dinner ideas that respect a Never ingredient', async () => {
     const source = new GeminiIdeaSource({
       apiKey: key!,
       model: process.env.GEMINI_LIVE_MODEL ?? 'gemini-3.8-flash',
     });
     const now = new Date();
+    const prefs = {
+      mushroom: { label: 'Mushrooms', pref: 'never' as const, updatedAt: now.toISOString() },
+    };
     const brief = buildBrief({
       meal: 'dinner',
-      count: 10,
+      count: Number(process.env.GEMINI_LIVE_COUNT ?? 10),
       angle: 'quick and easy, ready in 30 minutes or less',
       now,
       session: createSession('live', now),
       events: [],
       dishes: {},
-      prefs: {},
+      prefs,
       saved: {},
       memory: new Map(),
     });
     const started = Date.now();
-    const { batch, dishes } = await source.fetchBatch(brief);
-    console.info(
-      `[live] ${dishes.length} dishes in ${Date.now() - started}ms, ${batch.searchSuggestions.length} suggestion snippets`,
-    );
-    for (const d of dishes)
+    const { dishes } = await source.fetchBatch(brief);
+    console.info(`[live] ${dishes.length} dishes in ${Date.now() - started}ms`);
+    for (const d of dishes) {
+      const ingredients = d.ingredients.map((i) => `${i.family}${i.role === 'main' ? '*' : ''}`);
       console.info(
-        `[live] ${d.title} | ${d.sourceName} | ${d.recipeUrl} | img=${d.imageUrl ? 'yes' : 'no'} | ${d.ingredients.map((i) => `${i.family}${i.role === 'main' ? '*' : ''}`).join(', ')}`,
+        `[live] ${d.title} (${d.cuisine}, ${d.totalMinutes} min) | ${ingredients.join(', ')}`,
       );
-    expect(dishes.length).toBeGreaterThanOrEqual(5);
-    expect(batch.searchSuggestions.length).toBeGreaterThan(0);
-    for (const dish of dishes) {
-      expect(dish.recipeUrl).toMatch(/^https?:\/\//);
-      expect(dish.ingredients.length).toBeGreaterThan(0);
     }
-  }, 150_000);
+    expect(dishes.length).toBeGreaterThanOrEqual(Math.min(8, brief.count - 1));
+    for (const dish of dishes) {
+      expect(dish.ingredients.length).toBeGreaterThan(0);
+      expect(hasNeverIngredient(dish, prefs)).toBe(false);
+    }
+  }, 120_000);
 });

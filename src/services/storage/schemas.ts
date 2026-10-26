@@ -12,8 +12,6 @@ export const dishSchema = z.object({
   title: z.string(),
   description: z.string(),
   meal,
-  recipeUrl: z.string(),
-  sourceName: z.string(),
   imageUrl: z.nullable(z.string()),
   cuisine: z.string(),
   ideaKey: z.string(),
@@ -30,7 +28,6 @@ export const batchSchema = z.object({
   id: z.string(),
   meal,
   requestedAt: z.string(),
-  searchSuggestions: z.array(z.string()),
 });
 
 export const eventSchema = z.object({

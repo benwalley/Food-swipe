@@ -1,6 +1,6 @@
 # Food Swipe — spec
 
-A mobile-first single-page app for deciding what to eat by swiping on meal ideas the way you swipe on Tinder. AI searches the web for ideas, learns from your swipes, and fetches better ideas as you go.
+A mobile-first single-page app for deciding what to eat by swiping on meal ideas the way you swipe on Tinder. AI suggests ideas from its own knowledge, learns from your swipes, and keeps bringing better ones.
 
 **Design principle:** the main screen stays as simple as Tinder (one card, three swipes, three buttons). More control is always one gesture or one tap away, never in the way.
 
@@ -19,7 +19,7 @@ A mobile-first single-page app for deciding what to eat by swiping on meal ideas
 | Ingredient preference | Love / Not a fan / Never on an ingredient family (e.g. mushrooms). Long-term, applies to every meal. |
 | Mood | Session-only steering (quick, cozy, "no seafood this week"). |
 | Session | One sitting. Holds the "don't repeat" lists and mood. |
-| Batch | A group of dishes returned by one round of AI research. |
+| Batch | A group of dishes returned by one AI request. |
 | Meal | Breakfast, lunch, dinner, snack, or dessert. Each has its own deck. |
 
 ---
@@ -35,11 +35,11 @@ A mobile-first single-page app for deciding what to eat by swiping on meal ideas
 
 ### Deck and cards (DK)
 - **DK-1** One card is on top, with the next card visible slightly behind it.
-- **DK-2** The front of the card shows the dish image, title, a one-line description, the source name, and up to four key ingredient families as plain text.
+- **DK-2** The front of the card shows the dish art, title, a one-line description, up to four key ingredient families as plain text, and its tags.
 - **DK-3** If the image URL is missing or fails to load within 4 seconds, the card shows a styled placeholder (colour and icon picked from the cuisine or meal), never a broken image.
 - **DK-4** A dish you've seen in an earlier session shows a short memory line, e.g. "Passed once before" or "On your list".
 - **DK-5** A dish whose ingredients include an ingredient marked Never is never shown, even if the AI returns it.
-- **DK-6** The same dish (matched by normalized recipe URL, or by normalized title when the URL differs) is never shown twice in one session.
+- **DK-6** The same dish (matched by meal and normalized title) is never shown twice in one session.
 
 ### Swiping (SW)
 - **SW-1** Dragging the card moves it with your finger and tilts it in proportion to the horizontal distance.
@@ -56,7 +56,7 @@ A mobile-first single-page app for deciding what to eat by swiping on meal ideas
 
 ### Card back and ingredients (IN)
 - **IN-1** Tapping the card (less than 8px of movement) flips it over with a 3D animation. Tapping again flips it back.
-- **IN-2** The back shows the dish title, a "View recipe" link that opens the source in a new tab, the dish's key ingredient families (4–8), and the Google Search suggestions for the batch it came from. A specific name shows underneath when it differs from the family (e.g. "mushrooms" with "cremini" underneath).
+- **IN-2** The back shows the dish title, the dish's key ingredient families (4–8), and a "Find a recipe" button that opens a web search for the dish in a new tab. A specific name shows underneath when it differs from the family (e.g. "mushrooms" with "cremini" underneath).
 - **IN-3** Each ingredient row has three controls: Love, Not a fan, Never. Tapping one selects it, and tapping the selected one clears it.
 - **IN-4** Ingredient changes save immediately and apply to every meal. A toast confirms: "Love mushrooms, noted", "Less mushrooms from now on", or "No more mushrooms, anywhere".
 - **IN-5** Marking an ingredient Never keeps the current card visible so you can still swipe it. Later cards containing that ingredient are skipped, with a toast saying how many were skipped.
@@ -92,18 +92,18 @@ A mobile-first single-page app for deciding what to eat by swiping on meal ideas
 - **LR-10** All thresholds above live in one config file and are easy to tune.
 
 ### AI batches (AI)
-- **AI-1** The first time a meal's deck is opened, the app requests about 50 dishes for it. They arrive as five parallel sub-batches of 10, each from a different angle (classics, global, quick, seasonal, wildcard). Cards appear as soon as the first sub-batch lands.
+- **AI-1** The first time a meal's deck is opened, the app requests about 50 dishes for it: five parallel batches of 10, each from a different angle (classics, global, quick, seasonal, wildcard), plus a quick batch of 4 so the first cards arrive in about 8 seconds.
 - **AI-2** After every 10 verdicts in a meal, or when fewer than 8 cards are queued, the app requests a follow-up batch of about 20 in the background, so the deck never visibly runs dry.
 - **AI-3** Each request carries a brief built from: meal, mood, ideas you're into, dishes saved with This one, ideas you passed on, ingredient Love / Not a fan / Never, retired dishes, staples, and the titles already seen this session.
 - **AI-4** Each follow-up batch is roughly 70% close to what you like and 30% new directions, so the deck doesn't collapse into one cuisine.
-- **AI-5** Each dish returned has: title, description (120 characters max), meal, recipe URL, source name, image URL or null, cuisine, idea key, tags, total time or null, and 4–8 ingredients with name, family, and role (main or supporting).
+- **AI-5** Each dish returned has: title, description (120 characters max), meal, cuisine, idea key, tags, typical total time or null, and 4–8 ingredients with name, family, and role (main or supporting). Ideas come from the model's own knowledge, with no web search, so they carry no links or photos.
 - **AI-6** Dishes that fail validation, duplicate seen or retired dishes, or contain a Never ingredient are dropped on the client.
 - **AI-7** While the first batch loads, the stack shows an animated "Cooking up ideas…" card.
 - **AI-8** If a request fails, the loading card turns into a "Couldn't load ideas" card with a Retry button. Cards already in the deck stay usable.
 
 ### Your list (YL)
 - **YL-1** The Your list tab shows every dish saved with This one, newest first, with art, title, source, and when it was saved. A filter narrows it by meal, and the tab icon shows a count.
-- **YL-2** Tapping a dish opens its details: description, recipe link, ingredient ratings, and Google Search suggestions. You can remove it from the list (with Undo). That doesn't count as a Nah.
+- **YL-2** Tapping a dish opens its details: description, "Find a recipe", and ingredient ratings. You can remove it from the list (with Undo). That doesn't count as a Nah.
 
 ### Taste (TS)
 - **TS-1** The Taste tab groups every ingredient preference under Love, Not a fan, and Never, with the same cycling chips and add field as Refine.
@@ -163,21 +163,23 @@ The domain layer is pure functions (enforced by lint), so the learning rules get
 - `IdeaSource` takes a `Brief` and returns validated `Dish[]`. Today it calls Gemini from the browser. Later the same brief goes to your backend, which holds the key and can cache results across users.
 
 ### Data model (core types)
-See `src/domain/types.ts`. `Dish`, `Batch` (Google attribution), `VerdictEvent`, `PrefEntry`, `SavedEntry`, `Session` (per-meal decks plus mood), and `TasteData` (everything persisted).
+See `src/domain/types.ts`. `Dish`, `Batch`, `VerdictEvent`, `PrefEntry`, `SavedEntry`, `Session` (per-meal decks plus mood), and `TasteData` (everything persisted). `Dish.imageUrl` stays in the model, always null for now, ready for a future photo source.
 
 Dish memory (counts, retired, staple) is derived from the event log and memoized. Dish records are pruned at each new session to those referenced by events, Your list, or live decks.
 
 ### AI integration
-- **Call:** `ai.interactions.create` with `gemini-3.8-flash` (configurable), `thinking_level: "low"`, `store: false`.
-- **Tools:** `google_search` only. The model picks recipes from search results without opening pages, which keeps a 10-dish batch to about 12 searches and roughly 20–30 seconds.
-- **Output:** JSON via `response_format` with a schema generated from Zod. Each dish is validated on its own, so one bad entry doesn't sink a batch. Redirect links and non-http URLs are rejected.
-- **Attribution:** Google Search suggestion snippets from each response are stored with the batch and shown on the card back and in Your list, as Google's grounding terms require.
+- **Call:** `ai.interactions.create` with `gemini-3.8-flash` (configurable), `thinking_level: "low"`, `store: false`, and no tools. Ideas come from the model's own knowledge.
+- **Output:** JSON via `response_format` with a schema generated from Zod. Each dish is validated on its own, so one bad entry doesn't sink a batch.
+- **Recipes:** "Find a recipe" opens a web search for the dish name (`src/ui/lib/links.ts`). No search API is called, so it costs nothing.
 - **Errors:** mapped to `auth`, `quota`, `network`, `invalid-output`, `config`, `unknown`. The SDK retries connection errors twice. Requests can be aborted.
 - **Brief:** a compact text block built by `domain/brief.ts`, capped to the most recent and strongest signals.
+- **Loading:** the Gemini SDK is loaded lazily on the first batch, keeping it out of the initial bundle.
 
 ### Measured in testing
-- 10 dishes in about 26 seconds with 12 search queries. Google Search is free for the first 5,000 queries a month, then $14 per 1,000.
-- About 2 to 4 out of 10 dishes come with a usable image. The designed placeholder covers the rest (image work deferred).
+- 10 dishes in about 16 seconds; 4 dishes in about 8 seconds.
+- Under a cent per batch of 10 in tokens, so a heavy session costs a few cents at most.
+- Ideas were varied, real, home-cookable dishes with useful ingredient families, and a "never mushrooms" preference was respected.
+- An earlier version used Google Search for every card: about 12 searches per 10 dishes, roughly 3.4¢ per swipe beyond the free tier. Dropping search removed that cost and Google's grounding terms along with it.
 - Browser calls to Gemini work (CORS is allowed).
 
 ### Gesture implementation notes
@@ -187,11 +189,10 @@ Dish memory (counts, retired, staple) is derived from the event log and memoized
 - Android vibration uses `navigator.vibrate` after the first user interaction. iOS Safari has no vibration API, so iPhones get the visual change only.
 
 ### Out of scope for v1
-Accounts and sync, the backend itself, reliable dish photos, sharing lists, shopping lists, nutrition data, and multiple users on one device.
+Accounts and sync, the backend itself, dish photos, recipe links, sharing lists, shopping lists, nutrition data, and multiple users on one device.
 
 ---
 
 ## Before a public launch
-1. **Backend for AI calls.** The browser build contains the API key. Move `IdeaSource` behind a server.
-2. **Google grounding terms.** They require showing search suggestions with grounded results (done) and restrict storing and reformatting grounded results. Have the terms reviewed for how dishes are stored and shown as cards.
-3. **Images.** Decide on a photo source (link-preview fetching, a recipe API, or generated art).
+1. **Backend for AI calls.** The browser build contains the API key. Move `IdeaSource` behind a server, which can also cache popular ideas across users.
+2. **Photos.** Decide on a photo source (a recipe or image API, or generated art). `Dish.imageUrl` and the image loading in `DishArt` are ready for it.

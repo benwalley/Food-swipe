@@ -1,8 +1,7 @@
 import { Bookmark, Clock, Heart, RotateCcw, Star } from 'lucide-react';
 import type { MemoryLine } from '@/domain/memory';
-import type { Batch, Dish } from '@/domain/types';
+import type { Dish } from '@/domain/types';
 import { DishArt } from '@/ui/components/DishArt';
-import { SearchSuggestions } from '@/ui/components/SearchSuggestions';
 import { metaLine } from '@/ui/lib/format';
 import { IngredientRatings } from '../dish/IngredientRatings';
 import { RecipeLink } from '../dish/RecipeLink';
@@ -61,7 +60,11 @@ export function CardFront({ dish, memory, onFlip }: FrontProps) {
         <p className="mt-1 truncate text-[13px] text-ink-3">
           {dish.ingredients.map((i) => i.family).join(' · ')}
         </p>
-        <p className="truncate text-[12px] font-medium text-ink-3">from {dish.sourceName}</p>
+        {dish.tags.length > 0 && (
+          <p className="truncate text-[12px] font-medium text-ink-3 first-letter:uppercase">
+            {dish.tags.join(' · ')}
+          </p>
+        )}
       </div>
     </div>
   );
@@ -69,12 +72,11 @@ export function CardFront({ dish, memory, onFlip }: FrontProps) {
 
 interface BackProps {
   dish: Dish;
-  batch: Batch | undefined;
   onFlip: () => void;
 }
 
-/** Back of the card: rate ingredients, open the recipe, Google attribution. */
-export function CardBack({ dish, batch, onFlip }: BackProps) {
+/** Back of the card: rate the ingredients, then find a recipe. */
+export function CardBack({ dish, onFlip }: BackProps) {
   const meta = metaLine(dish);
   return (
     <div className="flex h-full flex-col">
@@ -102,9 +104,8 @@ export function CardBack({ dish, batch, onFlip }: BackProps) {
         <p className="smallcaps text-ink-3">How do you feel about…</p>
         <IngredientRatings dish={dish} />
       </div>
-      <footer className="flex flex-col gap-3 border-t border-line px-5 pt-3 pb-4">
+      <footer className="border-t border-line px-5 pt-3 pb-4">
         <RecipeLink dish={dish} />
-        <SearchSuggestions snippets={batch?.searchSuggestions ?? []} />
       </footer>
     </div>
   );
