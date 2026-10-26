@@ -1,4 +1,4 @@
-import type { IngredientPref } from '@/domain/types';
+import type { IngredientPref, SavedEntry } from '@/domain/types';
 
 /**
  * Things worth telling the user about, described as data. The UI decides
@@ -9,7 +9,7 @@ export type Notice =
   | { kind: 'never-dish'; title: string }
   | { kind: 'pref'; label: string; pref: IngredientPref | null; skipped: number }
   | { kind: 'skipped-never'; count: number }
-  | { kind: 'unsaved'; title: string; dishId: string }
+  | { kind: 'unsaved'; title: string; entry: SavedEntry }
   | { kind: 'restored'; title: string }
   | { kind: 'session-started'; retired: number }
   | { kind: 'refine-applied' }

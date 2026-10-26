@@ -56,14 +56,14 @@ A mobile-first single-page app for deciding what to eat by swiping on meal ideas
 
 ### Card back and ingredients (IN)
 - **IN-1** Tapping the card (less than 8px of movement) flips it over with a 3D animation. Tapping again flips it back.
-- **IN-2** The back shows the dish title, a "View recipe" link that opens the source in a new tab, and the dish's key ingredient families (4–8). A specific name shows underneath when it differs from the family (e.g. "mushrooms" with "cremini" underneath).
+- **IN-2** The back shows the dish title, a "View recipe" link that opens the source in a new tab, the dish's key ingredient families (4–8), and the Google Search suggestions for the batch it came from. A specific name shows underneath when it differs from the family (e.g. "mushrooms" with "cremini" underneath).
 - **IN-3** Each ingredient row has three controls: Love, Not a fan, Never. Tapping one selects it, and tapping the selected one clears it.
 - **IN-4** Ingredient changes save immediately and apply to every meal. A toast confirms: "Love mushrooms, noted", "Less mushrooms from now on", or "No more mushrooms, anywhere".
 - **IN-5** Marking an ingredient Never keeps the current card visible so you can still swipe it. Later cards containing that ingredient are skipped, with a toast saying how many were skipped.
 - **IN-6** The next card always opens on its front.
 
 ### Refine (RF)
-- **RF-1** A small floating "Refine" pill sits at the top of the card stack and shows a count badge when any session mood is active.
+- **RF-1** A floating "Refine" pill sits at the top of the swipe screen and shows a count badge when any session mood is active.
 - **RF-2** Tapping Refine opens a bottom sheet. Tapping the backdrop, swiping the sheet down, or tapping close dismisses it.
 - **RF-3** Mood section: multi-select tiles with an icon each — Quick, Cozy, Light, Adventurous, Cheap, Crowd-pleaser, Healthy.
 - **RF-4** A "Tell the chef" text field takes up to 140 characters (e.g. "no seafood this week").
@@ -102,26 +102,32 @@ A mobile-first single-page app for deciding what to eat by swiping on meal ideas
 - **AI-8** If a request fails, the loading card turns into a "Couldn't load ideas" card with a Retry button. Cards already in the deck stay usable.
 
 ### Your list (YL)
-- **YL-1** An icon in the header opens Your list: every dish saved with This one, grouped by meal, newest first, with image, title, and recipe link.
-- **YL-2** You can remove a dish from Your list. That doesn't count as a Nah.
+- **YL-1** The Your list tab shows every dish saved with This one, newest first, with art, title, source, and when it was saved. A filter narrows it by meal, and the tab icon shows a count.
+- **YL-2** Tapping a dish opens its details: description, recipe link, ingredient ratings, and Google Search suggestions. You can remove it from the list (with Undo). That doesn't count as a Nah.
+
+### Taste (TS)
+- **TS-1** The Taste tab groups every ingredient preference under Love, Not a fan, and Never, with the same cycling chips and add field as Refine.
+- **TS-2** Retired dishes are listed with a "Bring back" action that makes their earlier verdicts stop counting.
+- **TS-3** It shows when the current session started and how many swipes it has, with "Start a new session".
 
 ### Settings (ST)
-- **ST-1** Settings has a field for the Claude API key, stored only on this device, with a note that it's visible to anyone who uses this device.
-- **ST-2** With no key saved, the deck shows a card explaining that a key is needed, with a button that opens Settings.
-- **ST-3** "Export my data" downloads a JSON file of every long-term record. "Erase everything" asks for confirmation, then clears all stored data.
+- **ST-1** The Gemini API key comes from `VITE_GEMINI_API_KEY` in `.env.local`, which is gitignored. Any build includes the key in its JavaScript, so a public deploy needs the backend first.
+- **ST-2** With no key configured, the deck shows a card explaining how to add one. A rejected key gets its own explanation.
+- **ST-3** "Export my data" downloads a JSON file of every long-term record. "Erase everything" asks for confirmation, then clears all stored data. "Show the tutorial again" replays MB-5.
 
 ### Persistence (PS)
 - **PS-1** All long-term data (events, dish memory, ingredient preferences, Your list) and the current session survive closing and reopening the app.
-- **PS-2** Stored data carries a schema version, and the app migrates older versions on load.
+- **PS-2** Stored data carries a schema version and is validated on load. A collection that fails validation is set aside as a backup instead of crashing the app.
 - **PS-3** The UI never talks to storage directly. It only uses the repository interface (see technical approach), so a backend can replace local storage without UI changes.
 
 ### Mobile, PWA, and accessibility (MB)
 - **MB-1** The layout is designed for portrait phones from 360px to 430px wide, with no horizontal scrolling. On wider screens it stays centred at phone width.
 - **MB-2** The app can be installed to the home screen as a PWA, opens full screen, and shows the app shell offline.
 - **MB-3** Pull-to-refresh and browser back-swipe gestures don't fire while dragging a card.
-- **MB-4** Every gesture has a button or accessible action equivalent, and all controls have accessible labels. Touch targets are at least 44×44px.
-- **MB-5** On first launch, a dismissible three-step coach mark teaches: swipe sideways for the idea, swipe up for this one, drag far left for never, tap to flip.
-- **MB-6** Animations respect the reduce-motion setting (fades instead of flies and flips).
+- **MB-4** Every gesture has a button or accessible action equivalent, and all controls have accessible labels. Touch targets are at least 44×44px. On desktop: ← Nah, Shift+← Never, → Into it, ↑ This one, Space flips, ⌘Z undoes.
+- **MB-5** On first launch, a dismissible four-step walkthrough teaches: swipe right for into it, left for nah (far left for never), up for this one, and tap to flip.
+- **MB-6** Animations respect the reduce-motion setting.
+- **MB-7** The app follows the phone's light or dark setting.
 
 ---
 
@@ -130,94 +136,62 @@ A mobile-first single-page app for deciding what to eat by swiping on meal ideas
 ### Stack
 - **Vite + React + TypeScript**, deployed as static files (the PWA comes from `vite-plugin-pwa`).
 - **Motion** (`motion/react`) for drag, springs, fly-off, and the 3D flip.
-- **Tailwind CSS** for styling.
-- **Zustand** for app state, and **Zod** for validating AI output and stored data.
-- **`@anthropic-ai/sdk`** for Claude calls.
-- **Vitest** for domain logic. **Playwright** (mobile viewport, touch emulation) for gesture and flow smoke tests.
+- **Tailwind CSS v4** with semantic colour tokens that flip for dark mode. Fraunces (display) and Inter (UI), self-hosted.
+- **Zustand** for app state. **Zod** validates AI output; **zod/mini** validates stored data and config, keeping the main bundle small.
+- **`@google/genai`** (Interactions API) for Gemini, loaded lazily on the first batch.
+- **Vitest** for domain, services, and store integration tests.
 
 ### Layers
 
 ```
-ui/            React components: MealToggle, Deck, SwipeCard (front/back), RefineSheet, YourList, Settings
+app/           Composition root (picks implementations), shell, tab routing
+ui/            Components and features: swipe, refine, list, taste, onboarding
 state/         Zustand store: orchestrates domain + services, owns the session
-domain/        Pure TS, no I/O: types, learning rules, deck builder, ingredient matching, brief builder, thresholds config
+domain/        Pure TS, no I/O: types, learning rules, deck builder, ingredient matching, brief builder
+config/        Tuning thresholds and validated env
 services/
-  ideas/       IdeaSource interface      → ClaudeIdeaSource (browser-direct today) | ApiIdeaSource (later)
-  store/       TasteRepository interface → LocalStorageRepository (today)       | ApiRepository (later)
+  ideas/       IdeaSource interface      → GeminiIdeaSource (browser today) | FixtureIdeaSource (offline) | backend later
+  storage/     TasteRepository interface → LocalStorageRepository (today) | backend later
 ```
 
-The domain layer is pure functions, so the learning rules (LR-*) get thorough unit tests with no mocking.
+The domain layer is pure functions (enforced by lint), so the learning rules get thorough unit tests with no mocking.
 
 ### Backend-ready seams
-- `TasteRepository` is fully async (`Promise`-based) even though localStorage is synchronous, so swapping in an HTTP backend changes nothing above it.
-- Long-term data is an **append-only event log** (verdicts and ingredient-preference changes) plus derived snapshots (dish memory, preferences, Your list). The log syncs cleanly to a server later: post the events and let the server rebuild the snapshots.
-- Every record has a client-generated UUID and an `updatedAt` timestamp, ready for future sync and conflict handling.
-- `IdeaSource` takes a `Brief` and returns validated `Dish[]`. Today it calls Claude from the browser. Later the same brief goes to your backend, which holds the API key and can cache results across users.
+- `TasteRepository` is fully async with granular methods (append event, set preference, save dish), so swapping in an HTTP backend changes nothing above it.
+- Long-term data is an **append-only event log** of verdicts plus small maps (preferences, saved, restores). The log syncs cleanly to a server later.
+- Every record has a client-generated UUID and timestamps, ready for future sync.
+- `IdeaSource` takes a `Brief` and returns validated `Dish[]`. Today it calls Gemini from the browser. Later the same brief goes to your backend, which holds the key and can cache results across users.
 
 ### Data model (core types)
+See `src/domain/types.ts`. `Dish`, `Batch` (Google attribution), `VerdictEvent`, `PrefEntry`, `SavedEntry`, `Session` (per-meal decks plus mood), and `TasteData` (everything persisted).
 
-```ts
-type Meal = 'breakfast' | 'lunch' | 'dinner' | 'snack' | 'dessert';
-type Verdict = 'nah' | 'never' | 'into' | 'super';
-type IngredientPref = 'love' | 'meh' | 'never';
-
-interface Dish {
-  id: string;                 // hash of normalized recipe URL
-  title: string; description: string; meal: Meal;
-  recipeUrl: string; sourceName: string; imageUrl: string | null;
-  cuisine: string; ideaKey: string; tags: string[]; totalMinutes: number | null;
-  ingredients: { name: string; family: string; role: 'main' | 'supporting' }[];
-}
-
-interface VerdictEvent {
-  id: string; at: string; sessionId: string;
-  dishId: string; ideaKey: string; meal: Meal; verdict: Verdict;
-  prefsAtTime: Record<string, IngredientPref>;   // families on this dish only
-}
-
-interface Session {
-  id: string; startedAt: string; lastActiveAt: string;
-  mood: { tags: string[]; note: string };
-  decks: Record<Meal, { queue: string[]; seen: string[]; hiddenIdeas: string[] }>;
-}
-```
-
-Dish memory (`nah`/`into`/`super` counts, sessions seen, retired, staple) and the preference map are derived from the event log and cached as snapshots. Storage uses localStorage under versioned keys. Dish records are pruned to those referenced by events, Your list, or live decks, to stay well under browser storage limits. If it outgrows localStorage, IndexedDB slots in behind the same repository.
+Dish memory (counts, retired, staple) is derived from the event log and memoized. Dish records are pruned at each new session to those referenced by events, Your list, or live decks.
 
 ### AI integration
-- **Call shape:** `client.messages.stream(...)` → `finalMessage()` with `claude-opus-5-5`, `output_config.effort: "medium"`, and adaptive thinking.
-- **Server tools:** `web_search_20260209` (`max_uses` ≈ 5) and `web_fetch_20260209` (`max_uses` ≈ 10), so the model searches and reads recipe pages itself.
-- **Returning results:** the model hands back the batch by calling a strict client tool, `submit_meal_ideas` (`strict: true`, schema = AI-5), instead of using JSON output mode, because JSON output mode can't be combined with the citations that web search produces. Forcing the tool call isn't allowed on this model, so the system prompt tells it to finish by calling `submit_meal_ideas`. The client validates the input with Zod.
-- **Stop reasons:**
-  - `pause_turn`: the server-side search loop hit its iteration limit. Re-send the conversation to let it continue.
-  - `refusal`: retry once, then surface AI-8. Requests also enable the server-side fallback (`fallbacks: "default"`, beta `server-side-fallback-2026-07-01`) so a declined request is retried on another model automatically.
-  - `max_tokens`: drop that sub-batch and retry.
-- **Browser access:** the SDK client is created with `dangerouslyAllowBrowser: true` and the key from Settings. That's acceptable for a personal app. Moving the call behind the backend later removes the key from the device.
-- **Caching:** the system prompt and tool definitions stay byte-stable so prompt caching cuts cost on every follow-up batch.
-- **Brief:** a compact structured text block (the same idea as the prototype's "What the AI gets" panel) built by `domain/brief.ts`, capped in length by keeping only the most recent and strongest signals.
+- **Call:** `ai.interactions.create` with `gemini-3.8-flash` (configurable), `thinking_level: "low"`, `store: false`.
+- **Tools:** `google_search` only. The model picks recipes from search results without opening pages, which keeps a 10-dish batch to about 12 searches and roughly 20–30 seconds.
+- **Output:** JSON via `response_format` with a schema generated from Zod. Each dish is validated on its own, so one bad entry doesn't sink a batch. Redirect links and non-http URLs are rejected.
+- **Attribution:** Google Search suggestion snippets from each response are stored with the batch and shown on the card back and in Your list, as Google's grounding terms require.
+- **Errors:** mapped to `auth`, `quota`, `network`, `invalid-output`, `config`, `unknown`. The SDK retries connection errors twice. Requests can be aborted.
+- **Brief:** a compact text block built by `domain/brief.ts`, capped to the most recent and strongest signals.
+
+### Measured in testing
+- 10 dishes in about 26 seconds with 12 search queries. Google Search is free for the first 5,000 queries a month, then $14 per 1,000.
+- About 2 to 4 out of 10 dishes come with a usable image. The designed placeholder covers the rest (image work deferred).
+- Browser calls to Gemini work (CORS is allowed).
 
 ### Gesture implementation notes
-- The card uses Motion's `drag` with `dragElastic`. Release logic reads offset and velocity from `onDragEnd` and applies SW-3 to SW-7.
+- The card uses Motion's `drag` driven by drag controls, so taps on buttons and the scrolling ingredient list never start a drag. Release logic reads offset and velocity and applies SW-3 to SW-7.
 - Tap versus drag is decided by total movement under 8px.
 - The flip is a `rotateY` on an inner wrapper with `backface-visibility: hidden` faces, so the drag transform and the flip don't fight.
-- `touch-action: none` on the card plus `overscroll-behavior: none` on the page keeps pull-to-refresh and back-swipe from interfering (MB-3).
-- Android vibration uses `navigator.vibrate` when available. iOS Safari has no vibration API, so iPhones get the visual change only.
-
-### Testing
-- **Unit (Vitest):** learning rules (LR-1 to LR-10), deck builder (dedupe, Never filtering, the 20% re-show cap, staples), ingredient family matching, brief builder, repository round trips and migrations.
-- **E2E (Playwright, iPhone and Pixel viewports):** swipe in every direction, the Never threshold, undo, flip and rating, Refine sheet, meal switching, and persistence across reload. `IdeaSource` is stubbed with fixture batches so tests are fast and free.
-
-### Risks and first spikes
-1. **Images.** Web pages fetched by the model may not expose a usable image URL. Spike: run 3 batches and measure how often `imageUrl` loads. If the rate is low, the placeholder (DK-3) carries the MVP, and the backend later scrapes `og:image` reliably.
-2. **Latency and cost per batch.** Research with many searches takes tens of seconds. Spike: measure time and tokens per 10-dish sub-batch, then tune `max_uses`, effort, and batch size. Parallel sub-batches (AI-1) hide most of the wait.
-3. **Ingredient matching.** "Never mushrooms" has to catch "cremini". The model returns a `family` for each ingredient, and matching runs on family first, with simple plural normalization as a backstop.
+- Android vibration uses `navigator.vibrate` after the first user interaction. iOS Safari has no vibration API, so iPhones get the visual change only.
 
 ### Out of scope for v1
-Accounts and sync, the backend itself, sharing lists, shopping lists, nutrition data, and multiple users on one device.
+Accounts and sync, the backend itself, reliable dish photos, sharing lists, shopping lists, nutrition data, and multiple users on one device.
 
 ---
 
-## Open questions
-1. Is an API key stored in the browser OK until the backend exists?
-2. Should Your list be its own screen (as specced) or a tab beside the deck?
-3. Mood tiles: is this list of seven right, or do you want different ones?
+## Before a public launch
+1. **Backend for AI calls.** The browser build contains the API key. Move `IdeaSource` behind a server.
+2. **Google grounding terms.** They require showing search suggestions with grounded results (done) and restrict storing and reformatting grounded results. Have the terms reviewed for how dishes are stored and shown as cards.
+3. **Images.** Decide on a photo source (link-preview fetching, a recipe API, or generated art).

@@ -28,6 +28,8 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
+        // Fonts for other scripts load on demand; precache only the Latin subsets.
+        globIgnores: ['**/*-{cyrillic,cyrillic-ext,greek,greek-ext,vietnamese}-*.woff2'],
         navigateFallback: '/index.html',
       },
     }),

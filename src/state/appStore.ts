@@ -108,6 +108,7 @@ export function createAppStore(services: Services): AppStore {
   const { repo, ideas, notifier, now, newId } = services;
   const t = services.tuning ?? defaultTuning;
   let controllers = new Set<AbortController>();
+  let initPromise: Promise<void> | null = null;
 
   return createStore<AppState>()((set, get) => {
     /** Re-pins the top card for a meal after anything that can change it. */
@@ -289,18 +290,22 @@ export function createAppStore(services: Services): AppStore {
       undoStack: [],
       returning: null,
 
-      async init() {
-        const data = await repo.load();
-        set({ ...data, session: data.session ?? createSession(newId(), now()) });
-        if (!data.session || isSessionStale(data.session, now(), t)) {
-          const { session, dishes, batches } = freshSession(retiredIds());
-          set({ session, dishes, batches });
-          void repo.setSession(session);
-        }
-        const state = get();
-        const meal = state.session.activeMeal;
-        set({ ready: true, meal, pinned: pinTop(state, meal) });
-        ensureSupply(meal);
+      init() {
+        // Idempotent: React StrictMode and remounts may call this more than once.
+        initPromise ??= (async () => {
+          const data = await repo.load();
+          set({ ...data, session: data.session ?? createSession(newId(), now()) });
+          if (!data.session || isSessionStale(data.session, now(), t)) {
+            const { session, dishes, batches } = freshSession(retiredIds());
+            set({ session, dishes, batches });
+            void repo.setSession(session);
+          }
+          const state = get();
+          const meal = state.session.activeMeal;
+          set({ ready: true, meal, pinned: pinTop(state, meal) });
+          ensureSupply(meal);
+        })();
+        return initPromise;
       },
 
       resumeIfStale() {
@@ -486,7 +491,7 @@ export function createAppStore(services: Services): AppStore {
         delete saved[dishId];
         set({ saved });
         void repo.setSaved(dishId, null);
-        notifier.emit({ kind: 'unsaved', title: state.dishes[dishId]?.title ?? 'Dish', dishId });
+        notifier.emit({ kind: 'unsaved', title: state.dishes[dishId]?.title ?? 'Dish', entry });
       },
 
       resave(entry) {
@@ -511,6 +516,7 @@ export function createAppStore(services: Services): AppStore {
       async eraseEverything() {
         controllers.forEach((c) => c.abort());
         controllers = new Set();
+        initPromise = null;
         await repo.clear();
         set({
           ready: false,

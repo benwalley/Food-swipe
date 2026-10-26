@@ -1,9 +1,12 @@
-import { z } from 'zod';
+import * as z from 'zod/mini';
+
+const optionalTrimmed = (fallback: string) =>
+  z._default(z.optional(z.string().check(z.trim())), fallback);
 
 const envSchema = z.object({
-  VITE_GEMINI_API_KEY: z.string().trim().optional().default(''),
-  VITE_GEMINI_MODEL: z.string().trim().min(1).optional().default('gemini-3.8-flash'),
-  VITE_IDEA_SOURCE: z.enum(['gemini', 'fixtures']).optional().default('gemini'),
+  VITE_GEMINI_API_KEY: optionalTrimmed(''),
+  VITE_GEMINI_MODEL: optionalTrimmed('gemini-3.8-flash'),
+  VITE_IDEA_SOURCE: z._default(z.optional(z.enum(['gemini', 'fixtures'])), 'gemini'),
 });
 
 export type Env = z.infer<typeof envSchema>;

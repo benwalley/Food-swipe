@@ -1,4 +1,5 @@
-import { z } from 'zod';
+// zod/mini keeps validation out of the main bundle's critical weight.
+import * as z from 'zod/mini';
 import { MEALS, MOOD_TAGS } from '@/domain/types';
 
 /** Runtime validation for data read back from storage (never trust disk). */
@@ -13,11 +14,11 @@ export const dishSchema = z.object({
   meal,
   recipeUrl: z.string(),
   sourceName: z.string(),
-  imageUrl: z.string().nullable(),
+  imageUrl: z.nullable(z.string()),
   cuisine: z.string(),
   ideaKey: z.string(),
   tags: z.array(z.string()),
-  totalMinutes: z.number().nullable(),
+  totalMinutes: z.nullable(z.number()),
   ingredients: z.array(
     z.object({ name: z.string(), family: z.string(), role: z.enum(['main', 'supporting']) }),
   ),
@@ -79,7 +80,7 @@ export const collectionSchemas = {
   restores: z.record(z.string(), z.string()),
   dishes: z.record(z.string(), dishSchema),
   batches: z.record(z.string(), batchSchema),
-  session: sessionSchema.nullable(),
+  session: z.nullable(sessionSchema),
   onboarded: z.boolean(),
 } as const;
 
