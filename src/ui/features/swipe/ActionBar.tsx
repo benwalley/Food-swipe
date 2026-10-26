@@ -89,6 +89,10 @@ export function ActionBar({ enabled, canUndo, onVerdict, onUndo }: ActionBarProp
         onPointerLeave={() => endHold(false)}
         onPointerCancel={() => endHold(false)}
         onContextMenu={(event) => event.preventDefault()}
+        // Screen readers activate with a click that has no pointer sequence (detail 0).
+        onClick={(event) => {
+          if (event.detail === 0 && enabled) onVerdict('nah');
+        }}
         onKeyDown={(event) => {
           if (event.key === 'Enter' || event.key === ' ') {
             event.preventDefault();
