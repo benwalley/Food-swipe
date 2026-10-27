@@ -9,7 +9,7 @@ import { createNotifier } from '@/state/notices';
 
 function geminiSource(): IdeaSource {
   const config = { apiKey: env.VITE_GEMINI_API_KEY, model: env.VITE_GEMINI_MODEL };
-  return lazyIdeaSource(`Gemini (${config.model}) with Google Search`, () =>
+  return lazyIdeaSource(`Gemini (${config.model})`, () =>
     import('@/services/ideas/gemini/GeminiIdeaSource').then((m) => new m.GeminiIdeaSource(config)),
   );
 }

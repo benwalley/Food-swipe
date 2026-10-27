@@ -18,15 +18,19 @@ Requires Node 22 or later.
 npm install
 ```
 
-Create `.env.local` with your Gemini API key (it's gitignored):
+Copy the sample settings to `.env.local`, which is gitignored:
 
 ```bash
-printf 'VITE_GEMINI_API_KEY=your-key-here\nVITE_GEMINI_MODEL=gemini-3.8-flash\n' > .env.local
+cp .env.example .env.local
 ```
+
+Open `.env.local` and paste your [Gemini API key](https://aistudio.google.com/apikey) straight after `VITE_GEMINI_API_KEY=`, with no quotes or spaces. Never put a real key in `.env.example`, which is committed.
 
 ```bash
 npm run dev
 ```
+
+Vite reads `.env.local` only at startup, so restart the dev server after changing it.
 
 Open the printed URL on your phone (same network, `npm run dev -- --host`) or in a mobile-sized browser window.
 
@@ -40,23 +44,23 @@ VITE_IDEA_SOURCE=fixtures npm run dev
 
 ## Environment
 
-| Variable | Default | Purpose |
-| --- | --- | --- |
-| `VITE_GEMINI_API_KEY` | none | Gemini API key. Bundled into the client, so never deploy a build with a real key publicly. |
-| `VITE_GEMINI_MODEL` | `gemini-3.8-flash` | Model that suggests ideas. |
-| `VITE_IDEA_SOURCE` | `gemini` | `gemini` for live ideas, `fixtures` for offline samples. |
+| Variable              | Default            | Purpose                                                                                    |
+| --------------------- | ------------------ | ------------------------------------------------------------------------------------------ |
+| `VITE_GEMINI_API_KEY` | none               | Gemini API key. Bundled into the client, so never deploy a build with a real key publicly. |
+| `VITE_GEMINI_MODEL`   | `gemini-3.8-flash` | Model that suggests ideas.                                                                 |
+| `VITE_IDEA_SOURCE`    | `gemini`           | `gemini` for live ideas, `fixtures` for offline samples.                                   |
 
 ## Scripts
 
-| Command | What it does |
-| --- | --- |
-| `npm run dev` | Dev server with hot reload |
-| `npm run build` | Type-check and build the PWA into `dist/` |
-| `npm run preview` | Serve the production build |
-| `npm test` | Unit and integration tests |
-| `npm run typecheck` | TypeScript only |
-| `npm run lint` | ESLint |
-| `npm run format` | Prettier |
+| Command             | What it does                              |
+| ------------------- | ----------------------------------------- |
+| `npm run dev`       | Dev server with hot reload                |
+| `npm run build`     | Type-check and build the PWA into `dist/` |
+| `npm run preview`   | Serve the production build                |
+| `npm test`          | Unit and integration tests                |
+| `npm run typecheck` | TypeScript only                           |
+| `npm run lint`      | ESLint                                    |
+| `npm run format`    | Prettier                                  |
 
 A live test calls the real Gemini API and is skipped unless you pass a key:
 
@@ -88,13 +92,13 @@ Rules the code follows:
 
 ### Where to change things
 
-| To change | Edit |
-| --- | --- |
-| Swipe thresholds, re-show and retire rules, batch sizes | `src/config/tuning.ts` |
-| What Gemini is told | `src/services/ideas/gemini/prompt.ts` and `src/domain/brief.ts` |
-| Colours, fonts, shadows | `src/styles/index.css` |
-| Placeholder art palettes and icons | `src/ui/lib/art.ts` |
-| User-facing notice wording | `src/ui/lib/noticeText.ts` |
+| To change                                               | Edit                                                            |
+| ------------------------------------------------------- | --------------------------------------------------------------- |
+| Swipe thresholds, re-show and retire rules, batch sizes | `src/config/tuning.ts`                                          |
+| What Gemini is told                                     | `src/services/ideas/gemini/prompt.ts` and `src/domain/brief.ts` |
+| Colours, fonts, shadows                                 | `src/styles/index.css`                                          |
+| Placeholder art palettes and icons                      | `src/ui/lib/art.ts`                                             |
+| User-facing notice wording                              | `src/ui/lib/noticeText.ts`                                      |
 
 ### Adding a backend
 

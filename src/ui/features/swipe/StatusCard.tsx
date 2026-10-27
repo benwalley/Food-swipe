@@ -67,7 +67,7 @@ const ERROR_COPY: Record<IdeaErrorKind, { title: string; body: string; icon: typ
   {
     config: {
       title: 'Add your Gemini key',
-      body: 'Create .env.local in the project with VITE_GEMINI_API_KEY set, then restart the dev server.',
+      body: 'Paste your key after VITE_GEMINI_API_KEY= in .env.local, then restart the dev server.',
       icon: KeyRound,
     },
     auth: {
