@@ -32,6 +32,7 @@ import {
   type Verdict,
 } from '@/domain/types';
 import { isAbortError, IdeaSourceError, type IdeaSource } from '@/services/ideas/IdeaSource';
+import type { ApiKeyStore, KeySource } from '@/services/keys/ApiKeyStore';
 import type { TasteRepository } from '@/services/storage/TasteRepository';
 import type { Notifier } from './notices';
 import { deckContext, selectMemory } from './selectors';
@@ -39,6 +40,8 @@ import { deckContext, selectMemory } from './selectors';
 export interface Services {
   repo: TasteRepository;
   ideas: IdeaSource;
+  /** Present when the idea source needs a key the user supplies. */
+  keys?: ApiKeyStore;
   notifier: Notifier;
   now: () => Date;
   newId: () => string;
@@ -74,6 +77,8 @@ export interface AppState extends Persisted {
   undoStack: UndoEntry[];
   /** Set by undo so the returning card can animate in from where it left. */
   returning: { dishId: string; verdict: Verdict } | null;
+  /** Where the Gemini key comes from; null when the idea source needs none. */
+  keySource: KeySource | null;
 
   init(): Promise<void>;
   resumeIfStale(): void;
@@ -84,6 +89,9 @@ export interface AppState extends Persisted {
   applyMood(mood: Mood): void;
   startNewSession(): void;
   retry(meal: Meal): void;
+  /** Saves a key and retries any meal that was waiting on one (spec ST-1). */
+  setApiKey(key: string): void;
+  clearApiKey(): void;
   unsave(dishId: string): void;
   resave(entry: SavedEntry): void;
   restoreDish(dishId: string): void;
@@ -105,7 +113,7 @@ const nobodyPinned = (): Record<Meal, string | null> =>
 export type AppStore = StoreApi<AppState>;
 
 export function createAppStore(services: Services): AppStore {
-  const { repo, ideas, notifier, now, newId } = services;
+  const { repo, ideas, keys, notifier, now, newId } = services;
   const t = services.tuning ?? defaultTuning;
   let controllers = new Set<AbortController>();
   let initPromise: Promise<void> | null = null;
@@ -295,6 +303,7 @@ export function createAppStore(services: Services): AppStore {
       pinned: nobodyPinned(),
       undoStack: [],
       returning: null,
+      keySource: keys?.source() ?? null,
 
       init() {
         // Idempotent: React StrictMode and remounts may call this more than once.
@@ -487,6 +496,34 @@ export function createAppStore(services: Services): AppStore {
             'back',
           );
         }
+      },
+
+      setApiKey(key) {
+        if (!keys || !key.trim()) return;
+        keys.set(key);
+        const waitingOnKey = (status: FetchStatus) =>
+          status.error?.kind === 'config' || status.error?.kind === 'auth';
+        const blocked = MEALS.filter((m) => waitingOnKey(get().fetch[m]));
+        // Other meals refetch when the user switches to them.
+        set((s) => ({
+          keySource: keys.source(),
+          fetch: Object.fromEntries(
+            MEALS.map((m) => [
+              m,
+              blocked.includes(m) ? { ...s.fetch[m], error: null } : s.fetch[m],
+            ]),
+          ) as Record<Meal, FetchStatus>,
+        }));
+        notifier.emit({ kind: 'key-saved' });
+        const meal = get().meal;
+        if (blocked.includes(meal)) get().retry(meal);
+      },
+
+      clearApiKey() {
+        if (!keys) return;
+        keys.clear();
+        set({ keySource: keys.source() });
+        notifier.emit({ kind: 'key-removed' });
       },
 
       unsave(dishId) {

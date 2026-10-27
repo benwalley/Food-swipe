@@ -8,25 +8,26 @@ A mobile-first single-page app for deciding what to eat by swiping on meal ideas
 
 ## Glossary
 
-| Term | Meaning |
-|---|---|
-| Dish | One specific recipe from the web (title, link, image, ingredients). |
-| Idea | The general concept behind a dish (`ideaKey`, e.g. `thai-curry`). Many dishes share an idea. |
-| Nah | Swipe left. "Not into this idea." |
-| Never | Drag left past the second threshold. "Never show me this dish." |
-| Into it | Swipe right. "I like this idea — more like it." |
-| This one | Swipe up. "I want this specific dish." Saves it to Your list. |
+| Term                  | Meaning                                                                                              |
+| --------------------- | ---------------------------------------------------------------------------------------------------- |
+| Dish                  | One specific recipe from the web (title, link, image, ingredients).                                  |
+| Idea                  | The general concept behind a dish (`ideaKey`, e.g. `thai-curry`). Many dishes share an idea.         |
+| Nah                   | Swipe left. "Not into this idea."                                                                    |
+| Never                 | Drag left past the second threshold. "Never show me this dish."                                      |
+| Into it               | Swipe right. "I like this idea — more like it."                                                      |
+| This one              | Swipe up. "I want this specific dish." Saves it to Your list.                                        |
 | Ingredient preference | Love / Not a fan / Never on an ingredient family (e.g. mushrooms). Long-term, applies to every meal. |
-| Mood | Session-only steering (quick, cozy, "no seafood this week"). |
-| Session | One sitting. Holds the "don't repeat" lists and mood. |
-| Batch | A group of dishes returned by one AI request. |
-| Meal | Breakfast, lunch, dinner, snack, or dessert. Each has its own deck. |
+| Mood                  | Session-only steering (quick, cozy, "no seafood this week").                                         |
+| Session               | One sitting. Holds the "don't repeat" lists and mood.                                                |
+| Batch                 | A group of dishes returned by one AI request.                                                        |
+| Meal                  | Breakfast, lunch, dinner, snack, or dessert. Each has its own deck.                                  |
 
 ---
 
 ## Acceptance criteria
 
 ### Meal toggle (MT)
+
 - **MT-1** A segmented control at the top shows five options with an icon and label each: Breakfast, Lunch, Dinner, Snack, Dessert.
 - **MT-2** On a new session, the selected meal defaults by local time: breakfast 5:00–10:29, lunch 10:30–14:29, snack 14:30–16:59, dinner 17:00–20:59, dessert 21:00–4:59.
 - **MT-3** Each meal has its own deck and its own session lists. Switching meals keeps your place in each deck for the rest of the session.
@@ -34,6 +35,7 @@ A mobile-first single-page app for deciding what to eat by swiping on meal ideas
 - **MT-5** Ingredient preferences, Your list, and long-term dish memory are shared across all meals.
 
 ### Deck and cards (DK)
+
 - **DK-1** One card is on top, with the next card visible slightly behind it.
 - **DK-2** The front of the card shows the dish art, title, a one-line description, up to four key ingredient families as plain text, and its tags.
 - **DK-3** If the image URL is missing or fails to load within 4 seconds, the card shows a styled placeholder (colour and icon picked from the cuisine or meal), never a broken image.
@@ -42,6 +44,7 @@ A mobile-first single-page app for deciding what to eat by swiping on meal ideas
 - **DK-6** The same dish (matched by meal and normalized title) is never shown twice in one session.
 
 ### Swiping (SW)
+
 - **SW-1** Dragging the card moves it with your finger and tilts it in proportion to the horizontal distance.
 - **SW-2** While dragging, a stamp fades in to show what will happen on release: "Nah" (left), "Into it" (right), "This one!" (up).
 - **SW-3** Releasing past the commit threshold (30% of card width horizontally, or 25% of card height upward with the upward distance greater than the sideways distance) commits the swipe and the card flies off in that direction.
@@ -55,6 +58,7 @@ A mobile-first single-page app for deciding what to eat by swiping on meal ideas
 - **SW-11** Swiping works whether the card is showing its front or back.
 
 ### Card back and ingredients (IN)
+
 - **IN-1** Tapping the card (less than 8px of movement) flips it over with a 3D animation. Tapping again flips it back.
 - **IN-2** The back shows the dish title, the dish's key ingredient families (4–8), and a "Find a recipe" button that opens a web search for the dish in a new tab. A specific name shows underneath when it differs from the family (e.g. "mushrooms" with "cremini" underneath).
 - **IN-3** Each ingredient row has three controls: Love, Not a fan, Never. Tapping one selects it, and tapping the selected one clears it.
@@ -63,6 +67,7 @@ A mobile-first single-page app for deciding what to eat by swiping on meal ideas
 - **IN-6** The next card always opens on its front.
 
 ### Refine (RF)
+
 - **RF-1** A floating "Refine" pill sits at the top of the swipe screen and shows a count badge when any session mood is active.
 - **RF-2** Tapping Refine opens a bottom sheet. Tapping the backdrop, swiping the sheet down, or tapping close dismisses it.
 - **RF-3** Mood section: multi-select tiles with an icon each — Quick, Cozy, Light, Adventurous, Cheap, Crowd-pleaser, Healthy.
@@ -74,12 +79,14 @@ A mobile-first single-page app for deciding what to eat by swiping on meal ideas
 - **RF-9** The sheet also has a "Start new session" action (see SE-3).
 
 ### Sessions (SE)
+
 - **SE-1** A new session starts when the app opens after more than 3 hours of inactivity.
 - **SE-2** A session holds the per-meal lists of seen dishes and verdicts, plus the mood.
 - **SE-3** "Start new session" ends the current session immediately and keeps all long-term data.
 - **SE-4** Nah on a dish also hides other dishes with the same idea for the rest of that session.
 
 ### Learning and re-show rules (LR)
+
 - **LR-1** Every verdict is saved as a long-term event: dish, idea, meal, verdict, timestamp, session, and the ingredient preferences that applied at the time.
 - **LR-2** A dish you Nah'd can reappear in a later session (not the same one). Its memory line says it was passed before.
 - **LR-3** A dish with two Nahs across sessions and no Into it or This one is retired and never shown again.
@@ -92,6 +99,7 @@ A mobile-first single-page app for deciding what to eat by swiping on meal ideas
 - **LR-10** All thresholds above live in one config file and are easy to tune.
 
 ### AI batches (AI)
+
 - **AI-1** The first time a meal's deck is opened, the app requests about 50 dishes for it: five parallel batches of 10, each from a different angle (classics, global, quick, seasonal, wildcard), plus a quick batch of 4 so the first cards arrive in about 8 seconds.
 - **AI-2** After every 10 verdicts in a meal, or when fewer than 8 cards are queued, the app requests a follow-up batch of about 20 in the background, so the deck never visibly runs dry.
 - **AI-3** Each request carries a brief built from: meal, mood, ideas you're into, dishes saved with This one, ideas you passed on, ingredient Love / Not a fan / Never, retired dishes, staples, and the titles already seen this session.
@@ -102,25 +110,30 @@ A mobile-first single-page app for deciding what to eat by swiping on meal ideas
 - **AI-8** If a request fails, the loading card turns into a "Couldn't load ideas" card with a Retry button. Cards already in the deck stay usable.
 
 ### Your list (YL)
+
 - **YL-1** The Your list tab shows every dish saved with This one, newest first, with art, title, source, and when it was saved. A filter narrows it by meal, and the tab icon shows a count.
 - **YL-2** Tapping a dish opens its details: description, "Find a recipe", and ingredient ratings. You can remove it from the list (with Undo). That doesn't count as a Nah.
 
 ### Taste (TS)
+
 - **TS-1** The Taste tab groups every ingredient preference under Love, Not a fan, and Never, with the same cycling chips and add field as Refine.
 - **TS-2** Retired dishes are listed with a "Bring back" action that makes their earlier verdicts stop counting.
 - **TS-3** It shows when the current session started and how many swipes it has, with "Start a new session".
 
 ### Settings (ST)
-- **ST-1** The Gemini API key comes from `VITE_GEMINI_API_KEY` in `.env.local`, which is gitignored. Any build includes the key in its JavaScript, so a public deploy needs the backend first.
-- **ST-2** With no key configured, the deck shows a card explaining how to add one. A rejected key gets its own explanation.
+
+- **ST-1** The Gemini key is pasted into the app and kept only in that browser, so a public build ships without one. Taste has a Gemini key section to add, change, or remove it. For local development, `VITE_GEMINI_API_KEY` in the gitignored `.env.local` works too; a pasted key takes its place.
+- **ST-2** With no key, the deck shows a card that explains why one is needed and takes the key right there; saving it loads ideas straight away. A rejected key gets its own explanation and the same field.
 - **ST-3** "Export my data" downloads a JSON file of every long-term record. "Erase everything" asks for confirmation, then clears all stored data. "Show the tutorial again" replays MB-5.
 
 ### Persistence (PS)
+
 - **PS-1** All long-term data (events, dish memory, ingredient preferences, Your list) and the current session survive closing and reopening the app.
 - **PS-2** Stored data carries a schema version and is validated on load. A collection that fails validation is set aside as a backup instead of crashing the app.
 - **PS-3** The UI never talks to storage directly. It only uses the repository interface (see technical approach), so a backend can replace local storage without UI changes.
 
 ### Mobile, PWA, and accessibility (MB)
+
 - **MB-1** The layout is designed for portrait phones from 360px to 430px wide, with no horizontal scrolling. On wider screens it stays centred at phone width.
 - **MB-2** The app can be installed to the home screen as a PWA, opens full screen, and shows the app shell offline.
 - **MB-3** Pull-to-refresh and browser back-swipe gestures don't fire while dragging a card.
@@ -134,6 +147,7 @@ A mobile-first single-page app for deciding what to eat by swiping on meal ideas
 ## Technical approach
 
 ### Stack
+
 - **Vite + React + TypeScript**, deployed as static files (the PWA comes from `vite-plugin-pwa`).
 - **Motion** (`motion/react`) for drag, springs, fly-off, and the 3D flip.
 - **Tailwind CSS v4** with semantic colour tokens that flip for dark mode. Fraunces (display) and Inter (UI), self-hosted.
@@ -157,17 +171,25 @@ services/
 The domain layer is pure functions (enforced by lint), so the learning rules get thorough unit tests with no mocking.
 
 ### Backend-ready seams
+
 - `TasteRepository` is fully async with granular methods (append event, set preference, save dish), so swapping in an HTTP backend changes nothing above it.
 - Long-term data is an **append-only event log** of verdicts plus small maps (preferences, saved, restores). The log syncs cleanly to a server later.
 - Every record has a client-generated UUID and timestamps, ready for future sync.
 - `IdeaSource` takes a `Brief` and returns validated `Dish[]`. Today it calls Gemini from the browser. Later the same brief goes to your backend, which holds the key and can cache results across users.
+- `ApiKeyStore` holds the user's Gemini key (localStorage today). With a backend it goes away.
+
+### Hosting
+
+GitHub Pages, deployed by a GitHub Actions workflow on every push to `main`. The build is served under `/<repo>/` (`BASE_PATH`), routing uses the URL hash so no server rewrites are needed, and the workflow refuses to publish a build that contains anything resembling a Google API key.
 
 ### Data model (core types)
+
 See `src/domain/types.ts`. `Dish`, `Batch`, `VerdictEvent`, `PrefEntry`, `SavedEntry`, `Session` (per-meal decks plus mood), and `TasteData` (everything persisted). `Dish.imageUrl` stays in the model, always null for now, ready for a future photo source.
 
 Dish memory (counts, retired, staple) is derived from the event log and memoized. Dish records are pruned at each new session to those referenced by events, Your list, or live decks.
 
 ### AI integration
+
 - **Call:** `ai.interactions.create` with `gemini-3.8-flash` (configurable), `thinking_level: "low"`, `store: false`, and no tools. Ideas come from the model's own knowledge.
 - **Output:** JSON via `response_format` with a schema generated from Zod. Each dish is validated on its own, so one bad entry doesn't sink a batch.
 - **Recipes:** "Find a recipe" opens a web search for the dish name (`src/ui/lib/links.ts`). No search API is called, so it costs nothing.
@@ -176,6 +198,7 @@ Dish memory (counts, retired, staple) is derived from the event log and memoized
 - **Loading:** the Gemini SDK is loaded lazily on the first batch, keeping it out of the initial bundle.
 
 ### Measured in testing
+
 - 10 dishes in about 16 seconds; 4 dishes in about 8 seconds.
 - Under a cent per batch of 10 in tokens, so a heavy session costs a few cents at most.
 - Ideas were varied, real, home-cookable dishes with useful ingredient families, and a "never mushrooms" preference was respected.
@@ -183,16 +206,19 @@ Dish memory (counts, retired, staple) is derived from the event log and memoized
 - Browser calls to Gemini work (CORS is allowed).
 
 ### Gesture implementation notes
+
 - The card uses Motion's `drag` driven by drag controls, so taps on buttons and the scrolling ingredient list never start a drag. Release logic reads offset and velocity and applies SW-3 to SW-7.
 - Tap versus drag is decided by total movement under 8px.
 - The flip is a `rotateY` on an inner wrapper with `backface-visibility: hidden` faces, so the drag transform and the flip don't fight.
 - Android vibration uses `navigator.vibrate` after the first user interaction. iOS Safari has no vibration API, so iPhones get the visual change only.
 
 ### Out of scope for v1
+
 Accounts and sync, the backend itself, dish photos, recipe links, sharing lists, shopping lists, nutrition data, and multiple users on one device.
 
 ---
 
 ## Before a public launch
-1. **Backend for AI calls.** The browser build contains the API key. Move `IdeaSource` behind a server, which can also cache popular ideas across users.
+
+1. **Backend for AI calls.** Today each visitor pastes their own Gemini key. Move `IdeaSource` behind a server that holds the key, applies rate limits, and can cache popular ideas across users.
 2. **Photos.** Decide on a photo source (a recipe or image API, or generated art). `Dish.imageUrl` and the image loading in `DishArt` are ready for it.

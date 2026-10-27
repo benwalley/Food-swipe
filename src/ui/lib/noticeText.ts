@@ -41,5 +41,9 @@ export function noticeText(notice: Notice): ToastContent | null {
       return { message: 'Finding ideas for your mood…' };
     case 'nothing-to-undo':
       return { message: 'Nothing to undo' };
+    case 'key-saved':
+      return { message: 'Key saved in this browser', tone: 'like' };
+    case 'key-removed':
+      return { message: 'Key removed from this browser' };
   }
 }

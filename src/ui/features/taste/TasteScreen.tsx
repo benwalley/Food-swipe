@@ -1,9 +1,10 @@
-import { ArchiveRestore, Download, Info, RefreshCw, Trash } from 'lucide-react';
+import { ArchiveRestore, Download, Info, KeyRound, RefreshCw, Trash } from 'lucide-react';
 import { useMemo, useState, type ReactNode } from 'react';
 import { MEAL_LABELS } from '@/domain/meals';
 import { useApp, useAppStore, useSourceLabel } from '@/state/hooks';
 import { selectMemory } from '@/state/selectors';
 import { ConfirmDialog } from '@/ui/components/ConfirmDialog';
+import { ApiKeyForm } from '@/ui/features/key/ApiKeyForm';
 import { IngredientPrefsEditor } from './IngredientPrefsEditor';
 
 function Section({
@@ -48,6 +49,52 @@ function Row({
       <span className="grid size-5 place-items-center">{icon}</span>
       {label}
     </button>
+  );
+}
+
+const KEY_STATUS = {
+  browser: 'Saved in this browser. It only ever goes to Google.',
+  build: 'Using VITE_GEMINI_API_KEY from .env.local. A key pasted here takes its place.',
+  none: 'Paste a key so Gemini can think up ideas. It stays in this browser.',
+} as const;
+
+/** Spec ST-1: add, change, or remove the Gemini key. Hidden when ideas need no key. */
+function KeySection() {
+  const store = useAppStore();
+  const keySource = useApp((s) => s.keySource);
+  const [editing, setEditing] = useState(false);
+  if (keySource === null) return null;
+
+  return (
+    <Section title="Gemini key">
+      <p className="mb-3 text-[14px] leading-relaxed text-ink-2">{KEY_STATUS[keySource]}</p>
+      {editing || keySource === 'none' ? (
+        <ApiKeyForm
+          autoFocus={editing}
+          onCancel={editing ? () => setEditing(false) : undefined}
+          onSave={(key) => {
+            store.getState().setApiKey(key);
+            setEditing(false);
+          }}
+        />
+      ) : (
+        <>
+          <Row
+            icon={<KeyRound className="size-[18px]" strokeWidth={2} />}
+            label={keySource === 'browser' ? 'Change key' : 'Use a different key'}
+            onClick={() => setEditing(true)}
+          />
+          {keySource === 'browser' && (
+            <Row
+              icon={<Trash className="size-[18px]" strokeWidth={2} />}
+              label="Remove key"
+              onClick={() => store.getState().clearApiKey()}
+              danger
+            />
+          )}
+        </>
+      )}
+    </Section>
   );
 }
 
@@ -140,6 +187,8 @@ export function TasteScreen() {
             onClick={() => store.getState().startNewSession()}
           />
         </Section>
+
+        <KeySection />
 
         <Section title="Your data" aside="Stored on this device">
           <Row

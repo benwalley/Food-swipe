@@ -1,6 +1,8 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { tuning } from '@/config/tuning';
 import { FixtureIdeaSource } from '@/services/ideas/fixtures/FixtureIdeaSource';
+import { IdeaSourceError, type IdeaSource } from '@/services/ideas/IdeaSource';
+import { BrowserApiKeyStore } from '@/services/keys/BrowserApiKeyStore';
 import { LocalStorageRepository } from '@/services/storage/LocalStorageRepository';
 import { createAppStore, type Services } from './appStore';
 import { createNotifier, type Notice } from './notices';
@@ -8,7 +10,7 @@ import { selectCards } from './selectors';
 
 const settle = () => new Promise((resolve) => setTimeout(resolve, 10));
 
-function setup(start = new Date('2026-10-26T18:00:00')) {
+function setup(start = new Date('2026-10-26T18:00:00'), overrides: Partial<Services> = {}) {
   let clock = start;
   let ids = 0;
   const notices: Notice[] = [];
@@ -20,6 +22,7 @@ function setup(start = new Date('2026-10-26T18:00:00')) {
     notifier,
     now: () => clock,
     newId: () => `id-${++ids}`,
+    ...overrides,
   };
   const store = createAppStore(services);
   return {
@@ -126,6 +129,37 @@ describe('app store', () => {
     expect(store.getState().fetch.dinner.inFlight).toBe(1);
     await settle();
     expect(store.getState().fetch.dinner.inFlight).toBe(0);
+  });
+
+  it('waits for a key, then loads ideas as soon as one is saved (ST-1)', async () => {
+    const keys = new BrowserApiKeyStore(localStorage);
+    const fixtures = new FixtureIdeaSource({ delayMs: 0 });
+    const ideas: IdeaSource = {
+      label: 'needs a key',
+      fetchBatch: (brief, options) =>
+        keys.get()
+          ? fixtures.fetchBatch(brief, options)
+          : Promise.reject(new IdeaSourceError('config', 'No key')),
+    };
+    const { store, notices, top } = setup(undefined, { ideas, keys });
+    await store.getState().init();
+    await settle();
+    expect(store.getState().keySource).toBe('none');
+    expect(store.getState().fetch.dinner.error?.kind).toBe('config');
+
+    store.getState().setApiKey('test-key');
+    expect(store.getState().keySource).toBe('browser');
+    expect(store.getState().fetch.dinner.inFlight).toBeGreaterThan(0);
+    await settle();
+    expect(top()).toBeDefined();
+    expect(notices).toContainEqual({ kind: 'key-saved' });
+
+    store.getState().clearApiKey();
+    expect(store.getState().keySource).toBe('none');
+  });
+
+  it('has no key setting when the idea source needs none', () => {
+    expect(setup().store.getState().keySource).toBeNull();
   });
 
   it('erases everything and starts over (ST-3)', async () => {

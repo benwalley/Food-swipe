@@ -4,15 +4,19 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { MEAL_LABELS } from '@/domain/meals';
 import type { Meal } from '@/domain/types';
 import type { IdeaErrorKind } from '@/services/ideas/IdeaSource';
+import { ApiKeyForm } from '@/ui/features/key/ApiKeyForm';
 
 function Shell({ children }: { children: ReactNode }) {
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.97 }}
       animate={{ opacity: 1, scale: 1 }}
-      className="absolute inset-0 flex flex-col items-center justify-center overflow-hidden rounded-[28px] bg-surface px-8 text-center shadow-card"
+      className="absolute inset-0 overflow-y-auto rounded-[28px] bg-surface shadow-card"
     >
-      {children}
+      {/* Centred when it fits; scrolls when the keyboard squeezes the card. */}
+      <div className="flex min-h-full flex-col items-center justify-center px-8 py-8 text-center">
+        {children}
+      </div>
     </motion.div>
   );
 }
@@ -67,12 +71,12 @@ const ERROR_COPY: Record<IdeaErrorKind, { title: string; body: string; icon: typ
   {
     config: {
       title: 'Add your Gemini key',
-      body: 'Paste your key after VITE_GEMINI_API_KEY= in .env.local, then restart the dev server.',
+      body: 'Food Swipe asks Google’s Gemini for ideas. Your key stays in this browser and only goes to Google.',
       icon: KeyRound,
     },
     auth: {
       title: 'Gemini rejected the key',
-      body: 'Check VITE_GEMINI_API_KEY in .env.local, then restart the dev server.',
+      body: 'Check that you copied the whole key, then paste it again.',
       icon: KeyRound,
     },
     quota: {
@@ -97,10 +101,18 @@ const ERROR_COPY: Record<IdeaErrorKind, { title: string; body: string; icon: typ
     },
   };
 
-/** Spec AI-8 and ST-2: explains what went wrong and offers a retry. */
-export function ErrorCard({ kind, onRetry }: { kind: IdeaErrorKind; onRetry: () => void }) {
+interface ErrorCardProps {
+  kind: IdeaErrorKind;
+  onRetry: () => void;
+  /** Offered instead of a retry when the problem is a missing or rejected key. */
+  onSaveKey?: (key: string) => void;
+}
+
+/** Spec AI-8 and ST-2: explains what went wrong and offers a way forward. */
+export function ErrorCard({ kind, onRetry, onSaveKey }: ErrorCardProps) {
   const copy = ERROR_COPY[kind];
   const Icon = copy.icon;
+  const askForKey = onSaveKey && (kind === 'config' || kind === 'auth');
   return (
     <Shell>
       <div className="mb-5 grid size-20 place-items-center rounded-full bg-nope-soft">
@@ -108,14 +120,25 @@ export function ErrorCard({ kind, onRetry }: { kind: IdeaErrorKind; onRetry: () 
       </div>
       <h2 className="font-display text-[24px] leading-tight font-semibold">{copy.title}</h2>
       <p className="mt-2 text-[15px] leading-snug text-ink-2">{copy.body}</p>
-      <button
-        type="button"
-        onClick={onRetry}
-        className="mt-6 inline-flex h-12 items-center gap-2 rounded-full bg-ink px-6 text-[15px] font-semibold text-bg transition-transform active:scale-95"
-      >
-        <RefreshCw className="size-4" strokeWidth={2.25} />
-        Try again
-      </button>
+      {askForKey ? (
+        <div className="mt-6 w-full">
+          <ApiKeyForm onSave={onSaveKey} />
+          {import.meta.env.DEV && (
+            <p className="mt-3 text-xs text-ink-3">
+              Or set VITE_GEMINI_API_KEY in .env.local and restart the dev server.
+            </p>
+          )}
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={onRetry}
+          className="mt-6 inline-flex h-12 items-center gap-2 rounded-full bg-ink px-6 text-[15px] font-semibold text-bg transition-transform active:scale-95"
+        >
+          <RefreshCw className="size-4" strokeWidth={2.25} />
+          Try again
+        </button>
+      )}
     </Shell>
   );
 }

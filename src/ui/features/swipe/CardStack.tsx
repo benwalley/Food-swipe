@@ -28,6 +28,7 @@ export function CardStack({ meal, topRef }: CardStackProps) {
   const sessionId = useApp((s) => s.session.id);
   const saved = useApp((s) => s.saved);
   const memory = useApp((s) => selectMemory(s));
+  const keySource = useApp((s) => s.keySource);
   const progress = useMotionValue(0);
 
   const onDecide = useCallback(
@@ -41,7 +42,13 @@ export function CardStack({ meal, topRef }: CardStackProps) {
   if (cards.length === 0) {
     if (fetch.inFlight > 0) return <LoadingCard meal={meal} />;
     if (fetch.error)
-      return <ErrorCard kind={fetch.error.kind} onRetry={() => store.getState().retry(meal)} />;
+      return (
+        <ErrorCard
+          kind={fetch.error.kind}
+          onRetry={() => store.getState().retry(meal)}
+          onSaveKey={keySource ? (key) => store.getState().setApiKey(key) : undefined}
+        />
+      );
     return <EmptyCard meal={meal} onMore={() => store.getState().retry(meal)} />;
   }
 

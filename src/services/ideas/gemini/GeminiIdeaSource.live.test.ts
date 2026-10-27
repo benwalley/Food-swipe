@@ -13,7 +13,7 @@ const key = process.env.GEMINI_LIVE_KEY;
 describe.skipIf(!key)('GeminiIdeaSource (live)', () => {
   it('returns validated dinner ideas that respect a Never ingredient', async () => {
     const source = new GeminiIdeaSource({
-      apiKey: key!,
+      apiKey: () => key!,
       model: process.env.GEMINI_LIVE_MODEL ?? 'gemini-3.8-flash',
     });
     const now = new Date();

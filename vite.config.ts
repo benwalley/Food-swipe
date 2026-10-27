@@ -6,7 +6,14 @@ import { VitePWA } from 'vite-plugin-pwa';
 
 const CREAM = '#FBF7F0';
 
+/**
+ * Where the app is served from. GitHub Pages project sites live under
+ * /<repo>/, so the deploy workflow sets BASE_PATH; everywhere else it's /.
+ */
+const base = process.env.BASE_PATH || '/';
+
 export default defineConfig({
+  base,
   resolve: {
     alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },
   },
@@ -24,13 +31,14 @@ export default defineConfig({
         background_color: CREAM,
         display: 'standalone',
         orientation: 'portrait',
-        start_url: '/',
+        scope: base,
+        start_url: base,
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
         // Fonts for other scripts load on demand; precache only the Latin subsets.
         globIgnores: ['**/*-{cyrillic,cyrillic-ext,greek,greek-ext,vietnamese}-*.woff2'],
-        navigateFallback: '/index.html',
+        navigateFallback: `${base}index.html`,
       },
     }),
   ],

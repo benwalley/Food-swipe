@@ -13,7 +13,9 @@ export type Notice =
   | { kind: 'restored'; title: string }
   | { kind: 'session-started'; retired: number }
   | { kind: 'refine-applied' }
-  | { kind: 'nothing-to-undo' };
+  | { kind: 'nothing-to-undo' }
+  | { kind: 'key-saved' }
+  | { kind: 'key-removed' };
 
 export type NoticeListener = (notice: Notice) => void;
 

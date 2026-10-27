@@ -9,7 +9,8 @@ import { SYSTEM_INSTRUCTION } from './prompt';
 import { aiBatchSchema, aiDishSchema, geminiResponseSchema } from './schema';
 
 interface GeminiConfig {
-  apiKey: string;
+  /** Read on every request, so a key pasted mid-session takes effect at once. */
+  apiKey: () => string;
   model: string;
 }
 
@@ -21,18 +22,17 @@ type Interaction = GoogleGenAIInteraction;
  */
 export class GeminiIdeaSource implements IdeaSource {
   readonly label: string;
-  private client: GoogleGenAI | null = null;
+  private client: { apiKey: string; ai: GoogleGenAI } | null = null;
 
   constructor(private readonly config: GeminiConfig) {
     this.label = `Gemini (${config.model})`;
   }
 
   private getClient(): GoogleGenAI {
-    if (!this.config.apiKey) {
-      throw new IdeaSourceError('config', 'No Gemini API key is configured.');
-    }
-    this.client ??= new GoogleGenAI({ apiKey: this.config.apiKey });
-    return this.client;
+    const apiKey = this.config.apiKey();
+    if (!apiKey) throw new IdeaSourceError('config', 'No Gemini API key is set.');
+    if (this.client?.apiKey !== apiKey) this.client = { apiKey, ai: new GoogleGenAI({ apiKey }) };
+    return this.client.ai;
   }
 
   async fetchBatch(brief: Brief, options: { signal?: AbortSignal } = {}): Promise<IdeaBatch> {
