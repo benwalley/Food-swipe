@@ -13,6 +13,7 @@ export interface RawDish {
   tags: string[];
   totalMinutes: number | null;
   ingredients: { name: string; family: string; role: 'main' | 'supporting' }[];
+  wikipediaTitle?: string | null;
 }
 
 function clean(text: string, max: number): string {
@@ -43,6 +44,12 @@ function cleanIngredients(list: RawDish['ingredients']): Ingredient[] {
   return out.slice(0, 8);
 }
 
+/** Wikipedia titles are at most 255 bytes and never contain these characters. */
+function cleanWikipediaTitle(title: string | null | undefined): string | null {
+  const single = clean(title ?? '', 255);
+  return single && !/[#<>[\]{}|]/.test(single) ? single : null;
+}
+
 /** Same dish, same id: derived from the meal and normalized title. */
 export function dishId(meal: Dish['meal'], title: string): string {
   return stableHash(`${meal}:${normalizeTitle(title)}`);
@@ -66,7 +73,8 @@ export function toDish(raw: RawDish, brief: Brief, batch: Batch): Dish | null {
     title,
     description: clean(raw.description, 140),
     meal: brief.meal,
-    imageUrl: null,
+    wikipediaTitle: cleanWikipediaTitle(raw.wikipediaTitle),
+    photo: null,
     cuisine: clean(raw.cuisine, 24),
     ideaKey: slug(raw.ideaKey || title) || slug(title),
     tags: [...new Set(raw.tags.map((t) => clean(t, 20).toLowerCase()).filter(Boolean))].slice(0, 4),

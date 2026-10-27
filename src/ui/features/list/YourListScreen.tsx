@@ -126,7 +126,7 @@ function DishSheet({ dish, onClose }: { dish: Dish | undefined; onClose: () => v
       {dish && (
         <div className="flex flex-col gap-5">
           <div className="-mx-5 aspect-[16/9] overflow-hidden">
-            <DishArt dish={dish} />
+            <DishArt dish={dish} credit />
           </div>
           {dish.description && (
             <p className="text-[16px] leading-relaxed text-ink-2">{dish.description}</p>

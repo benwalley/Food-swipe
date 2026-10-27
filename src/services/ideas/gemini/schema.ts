@@ -3,6 +3,14 @@ import { z } from 'zod';
 /** What Gemini must return. Validated per dish so one bad entry doesn't sink a batch. */
 export const aiDishSchema = z.object({
   title: z.string().describe('The dish name people would search for, short and appetizing.'),
+  // A default keeps it required in the schema Gemini sees, while a dish without it still parses.
+  wikipediaTitle: z
+    .string()
+    .nullable()
+    .default(null)
+    .describe(
+      'Exact title of the English Wikipedia article about this dish, e.g. "Shakshouka", or null.',
+    ),
   description: z.string().describe('One enticing sentence, at most 120 characters.'),
   cuisine: z.string().describe('One or two words, e.g. "Thai" or "Tex-Mex".'),
   ideaKey: z

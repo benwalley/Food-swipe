@@ -10,7 +10,7 @@ A mobile-first single-page app for deciding what to eat by swiping on meal ideas
 
 | Term                  | Meaning                                                                                              |
 | --------------------- | ---------------------------------------------------------------------------------------------------- |
-| Dish                  | One specific recipe from the web (title, link, image, ingredients).                                  |
+| Dish                  | One specific dish Gemini suggested (title, ingredients, and a photo when one is found).              |
 | Idea                  | The general concept behind a dish (`ideaKey`, e.g. `thai-curry`). Many dishes share an idea.         |
 | Nah                   | Swipe left. "Not into this idea."                                                                    |
 | Never                 | Drag left past the second threshold. "Never show me this dish."                                      |
@@ -38,7 +38,7 @@ A mobile-first single-page app for deciding what to eat by swiping on meal ideas
 
 - **DK-1** One card is on top, with the next card visible slightly behind it.
 - **DK-2** The front of the card shows the dish art, title, a one-line description, up to four key ingredient families as plain text, and its tags.
-- **DK-3** If the image URL is missing or fails to load within 4 seconds, the card shows a styled placeholder (colour and icon picked from the cuisine or meal), never a broken image.
+- **DK-3** If the dish has no photo, or its photo fails to load within 4 seconds, the card shows a styled placeholder (colour and icon picked from the cuisine or meal), never a broken image.
 - **DK-4** A dish you've seen in an earlier session shows a short memory line, e.g. "Passed once before" or "On your list".
 - **DK-5** A dish whose ingredients include an ingredient marked Never is never shown, even if the AI returns it.
 - **DK-6** The same dish (matched by meal and normalized title) is never shown twice in one session.
@@ -104,10 +104,19 @@ A mobile-first single-page app for deciding what to eat by swiping on meal ideas
 - **AI-2** After every 10 verdicts in a meal, or when fewer than 8 cards are queued, the app requests a follow-up batch of about 20 in the background, so the deck never visibly runs dry.
 - **AI-3** Each request carries a brief built from: meal, mood, ideas you're into, dishes saved with This one, ideas you passed on, ingredient Love / Not a fan / Never, retired dishes, staples, and the titles already seen this session.
 - **AI-4** Each follow-up batch is roughly 70% close to what you like and 30% new directions, so the deck doesn't collapse into one cuisine.
-- **AI-5** Each dish returned has: title, description (120 characters max), meal, cuisine, idea key, tags, typical total time or null, and 4–8 ingredients with name, family, and role (main or supporting). Ideas come from the model's own knowledge, with no web search, so they carry no links or photos.
+- **AI-5** Each dish returned has: title, the title of its English Wikipedia article (or null), description (120 characters max), meal, cuisine, idea key, tags, typical total time or null, and 4–8 ingredients with name, family, and role (main or supporting). Ideas come from the model's own knowledge, with no web search; photos are added afterwards (PH).
 - **AI-6** Dishes that fail validation, duplicate seen or retired dishes, or contain a Never ingredient are dropped on the client.
 - **AI-7** While the first batch loads, the stack shows an animated "Cooking up ideas…" card.
 - **AI-8** If a request fails, the loading card turns into a "Couldn't load ideas" card with a Retry button. Cards already in the deck stay usable.
+
+### Photos (PH)
+
+- **PH-1** Each batch gets photos before it reaches the deck. First choice is the lead image of the Wikipedia article Gemini named, if it is freely licensed. Missing articles, disambiguation pages, redirects to a section of a broader article, and images narrower than 480px are skipped.
+- **PH-2** Dishes still without a photo get one from Pexels, searched by dish name. A result is used only if its description mentions the dish or one of its main ingredients, so a search for "pad kra pao" can't return a notepad.
+- **PH-3** Photo lookups never fail a batch and never hold it back more than 2.5 seconds. Dishes without a photo by then keep the illustration.
+- **PH-4** Photos are saved with the dish, so Your list keeps them. List thumbnails use a small (330px) version.
+- **PH-5** Every photo carries its credit where it is shown in full (cards and dish details), as a small link to the photo's page: author and licence for Wikipedia photos, photographer and "Pexels" for Pexels photos. If the name is long, it is shortened and the licence stays whole. The Taste tab credits Wikimedia Commons and Pexels.
+- **PH-6** When Pexels reports its hourly limit is used up, the app stops asking it for 15 minutes. A rejected Pexels key stops Pexels until the app reloads.
 
 ### Your list (YL)
 
@@ -125,6 +134,7 @@ A mobile-first single-page app for deciding what to eat by swiping on meal ideas
 - **ST-1** The Gemini key is pasted into the app and kept only in that browser, so a public build ships without one. Taste has a Gemini key section to add, change, or remove it. For local development, `VITE_GEMINI_API_KEY` in the gitignored `.env.local` works too; a pasted key takes its place.
 - **ST-2** With no key, the deck shows a card that explains why one is needed and takes the key right there; saving it loads ideas straight away. A rejected key gets its own explanation and the same field.
 - **ST-3** "Export my data" downloads a JSON file of every long-term record. "Erase everything" asks for confirmation, then clears all stored data. "Show the tutorial again" replays MB-5.
+- **ST-4** The Pexels key is built into the site from `VITE_PEXELS_API_KEY` (a GitHub Actions secret when deploying), so every visitor gets Pexels photos. This is a deliberate trade-off: anyone can read the key from the page, and all visitors share its limit of 200 searches an hour. Without a key, photos come from Wikipedia only.
 
 ### Persistence (PS)
 
@@ -180,11 +190,11 @@ The domain layer is pure functions (enforced by lint), so the learning rules get
 
 ### Hosting
 
-GitHub Pages, deployed by a GitHub Actions workflow on every push to `main`. The build is served under `/<repo>/` (`BASE_PATH`), routing uses the URL hash so no server rewrites are needed, and the workflow refuses to publish a build that contains anything resembling a Google API key.
+GitHub Pages, deployed by a GitHub Actions workflow on every push to `main`. The build is served under `/<repo>/` (`BASE_PATH`), routing uses the URL hash so no server rewrites are needed, and the workflow refuses to publish a build that contains anything resembling a Google API key. The Pexels key comes from the `PEXELS_API_KEY` repository secret.
 
 ### Data model (core types)
 
-See `src/domain/types.ts`. `Dish`, `Batch`, `VerdictEvent`, `PrefEntry`, `SavedEntry`, `Session` (per-meal decks plus mood), and `TasteData` (everything persisted). `Dish.imageUrl` stays in the model, always null for now, ready for a future photo source.
+See `src/domain/types.ts`. `Dish`, `Batch`, `VerdictEvent`, `PrefEntry`, `SavedEntry`, `Session` (per-meal decks plus mood), and `TasteData` (everything persisted). `Dish.photo` holds the photo with its credit (`source`, `author`, `license`, `pageUrl`), and `Dish.wikipediaTitle` the article Gemini named. Dishes saved before photos existed load with both set to null.
 
 Dish memory (counts, retired, staple) is derived from the event log and memoized. Dish records are pruned at each new session to those referenced by events, Your list, or live decks.
 
@@ -197,6 +207,13 @@ Dish memory (counts, retired, staple) is derived from the event log and memoized
 - **Brief:** a compact text block built by `domain/brief.ts`, capped to the most recent and strongest signals.
 - **Loading:** the Gemini SDK is loaded lazily on the first batch, keeping it out of the initial bundle.
 
+### Photo integration
+
+- **Seam:** `PhotoSource` (`src/services/photos/`) finds photos for a list of dishes. `withPhotos` wraps any `IdeaSource` and adds them to each batch under a deadline. `firstMatch(wikipedia, pexels)` asks Pexels only about dishes Wikipedia couldn't match.
+- **Wikipedia:** two requests per batch to the MediaWiki Action API with anonymous CORS (`origin=*`), no key. The first gets each article's lead image (`prop=pageimages`, `pilicense=free`, with redirects resolved and disambiguation flagged). The second gets each image's author and licence (`prop=imageinfo`, `extmetadata`). The author arrives as HTML and is reduced to plain text through an inert `DOMParser` document.
+- **Pexels:** one search per dish (`orientation=landscape`, 8 results), at most 3 at a time, with the key in the `Authorization` header.
+- **Safety:** responses are validated with zod. Only `https` image and credit URLs are used, and credits render as text, never HTML.
+
 ### Measured in testing
 
 - 10 dishes in about 16 seconds; 4 dishes in about 8 seconds.
@@ -204,6 +221,8 @@ Dish memory (counts, retired, staple) is derived from the event log and memoized
 - Ideas were varied, real, home-cookable dishes with useful ingredient families, and a "never mushrooms" preference was respected.
 - An earlier version used Google Search for every card: about 12 searches per 10 dishes, roughly 3.4¢ per swipe beyond the free tier. Dropping search removed that cost and Google's grounding terms along with it.
 - Browser calls to Gemini work (CORS is allowed).
+- Browser calls to the Wikipedia Action API and to Pexels work (both allow any origin).
+- Wikipedia had a free photo for 7 of 8 typical Gemini dishes. The miss was a spelling of pad kra pao that Wikipedia doesn't redirect, which asking Gemini for Wikipedia's own title avoids. Its two photo requests add about 0.4 seconds to a batch.
 
 ### Gesture implementation notes
 
@@ -214,11 +233,11 @@ Dish memory (counts, retired, staple) is derived from the event log and memoized
 
 ### Out of scope for v1
 
-Accounts and sync, the backend itself, dish photos, recipe links, sharing lists, shopping lists, nutrition data, and multiple users on one device.
+Accounts and sync, the backend itself, recipe links, sharing lists, shopping lists, nutrition data, and multiple users on one device.
 
 ---
 
 ## Before a public launch
 
 1. **Backend for AI calls.** Today each visitor pastes their own Gemini key. Move `IdeaSource` behind a server that holds the key, applies rate limits, and can cache popular ideas across users.
-2. **Photos.** Decide on a photo source (a recipe or image API, or generated art). `Dish.imageUrl` and the image loading in `DishArt` are ready for it.
+2. **Photos through the backend.** Look each dish's photo up once on the server and cache it for everyone. That keeps the Pexels key private and stops visitors from sharing its 200 searches an hour. Pexels raises limits for free for apps that credit it. With the backend's `IdeaSource` returning dishes with photos, drop `withPhotos` from `src/app/services.ts`.

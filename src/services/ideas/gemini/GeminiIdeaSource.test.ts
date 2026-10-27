@@ -9,6 +9,7 @@ const batch = { id: 'b1', meal: 'dinner' as const, requestedAt: '2026-10-26T00:0
 
 const good = {
   title: 'Thai Green Curry',
+  wikipediaTitle: 'Green curry',
   description: 'Fragrant and creamy.',
   cuisine: 'Thai',
   ideaKey: 'Thai Curry',
@@ -32,7 +33,8 @@ describe('parseDishes', () => {
       ideaKey: 'thai-curry',
       tags: ['spicy'],
       meal: 'dinner',
-      imageUrl: null,
+      wikipediaTitle: 'Green curry',
+      photo: null,
       batchId: 'b1',
     });
   });
@@ -63,6 +65,16 @@ describe('parseDishes', () => {
     const [dish] = parseDishes(output, brief, batch);
     expect(dish!.ingredients.map((i) => i.family)).toEqual(['chicken', 'coconut']);
     expect(dish!.totalMinutes).toBeNull();
+  });
+
+  it('keeps a dish whose Wikipedia title is missing or unusable, without the title', () => {
+    const withoutTitle: Partial<typeof good> = { ...good };
+    delete withoutTitle.wikipediaTitle;
+    const output = JSON.stringify({
+      dishes: [withoutTitle, { ...good, title: 'Red Curry', wikipediaTitle: 'Curry|Red' }],
+    });
+    const dishes = parseDishes(output, brief, batch);
+    expect(dishes.map((d) => d.wikipediaTitle)).toEqual([null, null]);
   });
 
   it('rejects non-JSON output', () => {
@@ -98,5 +110,12 @@ describe('geminiResponseSchema', () => {
     };
     expect(schema.properties.dishes.maxItems).toBe(10);
     expect(schema.properties.dishes.items.$schema).toBeUndefined();
+  });
+
+  it('asks Gemini for a Wikipedia title on every dish', () => {
+    const schema = geminiResponseSchema(10) as {
+      properties: { dishes: { items: { required: string[] } } };
+    };
+    expect(schema.properties.dishes.items.required).toContain('wikipediaTitle');
   });
 });

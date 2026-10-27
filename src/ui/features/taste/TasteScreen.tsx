@@ -210,7 +210,25 @@ export function TasteScreen() {
         </Section>
 
         <p className="px-2 text-center text-xs leading-relaxed text-ink-3">
-          Ideas from {sourceLabel}.
+          Ideas from {sourceLabel}. Photos from{' '}
+          <a
+            href="https://commons.wikimedia.org/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline underline-offset-2 hover:text-ink-2"
+          >
+            Wikimedia Commons
+          </a>{' '}
+          and{' '}
+          <a
+            href="https://www.pexels.com/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline underline-offset-2 hover:text-ink-2"
+          >
+            Pexels
+          </a>
+          , credited on each photo.
         </p>
       </div>
 

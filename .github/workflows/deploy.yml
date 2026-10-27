@@ -37,10 +37,13 @@ jobs:
 
       # No VITE_GEMINI_API_KEY here on purpose: anything in the build is public.
       # Visitors paste their own key, which stays in their browser.
+      # The Pexels key is bundled knowingly: it's free and only finds photos.
+      # Without the PEXELS_API_KEY secret, photos come from Wikipedia only.
       - name: Build
         run: npm run build
         env:
           BASE_PATH: ${{ steps.pages.outputs.base_path }}/
+          VITE_PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
 
       - name: Check that no API key was bundled
         run: |

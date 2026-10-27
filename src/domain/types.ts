@@ -27,14 +27,32 @@ export interface Ingredient {
   role: IngredientRole;
 }
 
+export type PhotoSourceName = 'wikipedia' | 'pexels';
+
+export interface Photo {
+  /** Card-sized image, about 960px wide. */
+  url: string;
+  /** Small image for list thumbnails. */
+  thumbUrl: string;
+  source: PhotoSourceName;
+  /** Photographer or uploader as the source names them; empty when unknown. */
+  author: string;
+  /** Licence shown in the credit, e.g. "CC BY-SA 4.0"; empty when there isn't one to show. */
+  license: string;
+  /** Page showing the photo with its author and licence. The credit links here. */
+  pageUrl: string;
+}
+
 export interface Dish {
   /** Stable hash of the meal and normalized title. */
   id: string;
   title: string;
   description: string;
   meal: Meal;
-  /** Reserved for a future photo source; ideas currently come without photos. */
-  imageUrl: string | null;
+  /** English Wikipedia article for the dish, used to find its photo. Null when it has none. */
+  wikipediaTitle: string | null;
+  /** Null when no source had a matching photo; cards then show the illustration. */
+  photo: Photo | null;
   cuisine: string;
   /** Slug for the general idea, shared by variations (e.g. "thai-curry"). */
   ideaKey: string;

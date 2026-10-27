@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { createSession } from '@/domain/session';
+import type { Dish } from '@/domain/types';
 import { makeDish, makeEvent, pref } from '@/test/factories';
 import { LocalStorageRepository } from './LocalStorageRepository';
 
@@ -35,6 +36,36 @@ describe('LocalStorageRepository', () => {
     expect(data.prefs).toEqual({});
     const backups = Object.keys(localStorage).filter((k) => k.startsWith('test:v1:prefs:corrupt:'));
     expect(backups).toHaveLength(1);
+  });
+
+  it('loads dishes saved before photos existed, without a photo', async () => {
+    const older: Partial<Dish> & { imageUrl: null } = {
+      ...makeDish({ id: 'old' }),
+      imageUrl: null,
+    };
+    delete older.wikipediaTitle;
+    delete older.photo;
+    localStorage.setItem('test:v1:dishes', JSON.stringify({ old: older }));
+    const data = await new LocalStorageRepository(localStorage, 'test').load();
+    expect(data.dishes.old).toMatchObject({ id: 'old', wikipediaTitle: null, photo: null });
+    expect(data.dishes.old).not.toHaveProperty('imageUrl');
+  });
+
+  it('keeps a dish photo and its credit', async () => {
+    const repo = new LocalStorageRepository(localStorage, 'test');
+    await repo.load();
+    const photo = {
+      url: 'https://example.org/960px-a.jpg',
+      thumbUrl: 'https://example.org/330px-a.jpg',
+      source: 'wikipedia' as const,
+      author: 'Calliopejen1',
+      license: 'CC BY-SA 3.0',
+      pageUrl: 'https://en.wikipedia.org/wiki/File:A.jpg',
+    };
+    await repo.putDishes([makeDish({ id: 'd1', wikipediaTitle: 'Shakshouka', photo })], []);
+    await repo.flush();
+    const data = await new LocalStorageRepository(localStorage, 'test').load();
+    expect(data.dishes.d1).toMatchObject({ wikipediaTitle: 'Shakshouka', photo });
   });
 
   it('prunes unreferenced dishes and their batches', async () => {

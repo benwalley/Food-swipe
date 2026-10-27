@@ -7,6 +7,8 @@ const envSchema = z.object({
   VITE_GEMINI_API_KEY: optionalTrimmed(''),
   VITE_GEMINI_MODEL: optionalTrimmed('gemini-3.8-flash'),
   VITE_IDEA_SOURCE: z._default(z.optional(z.enum(['gemini', 'fixtures'])), 'gemini'),
+  /** Bundled into the public site on purpose; without it, photos come from Wikipedia only. */
+  VITE_PEXELS_API_KEY: optionalTrimmed(''),
 });
 
 export type Env = z.infer<typeof envSchema>;

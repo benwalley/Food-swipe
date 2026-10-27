@@ -335,6 +335,8 @@ function toRaw([title, cuisine, minutes, description, ingredients, tags = '']: R
     .replace(/^-|-$/g, '');
   return {
     title,
+    // Samples are well-known dishes, so their titles (in Wikipedia's sentence case) find most articles.
+    wikipediaTitle: title.charAt(0) + title.slice(1).toLowerCase(),
     description,
     cuisine,
     ideaKey: slug,

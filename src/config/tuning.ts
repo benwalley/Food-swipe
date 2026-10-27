@@ -57,7 +57,22 @@ export const tuning = {
     maxSignals: 12,
     maxAvoidTitles: 60,
   },
-  image: {
+  photos: {
+    /** Longest a batch waits for photos; dishes without one by then keep the illustration. */
+    lookupTimeoutMs: 2500,
+    /** Card photo width asked of Wikipedia; one of Wikimedia's standard sizes. */
+    cardWidth: 960,
+    /** List thumbnail width asked of Wikipedia; also a standard size. */
+    thumbWidth: 330,
+    /** Narrower photos look soft on a card, so they're skipped. */
+    minWidth: 480,
+    /** Pexels results checked for one whose description mentions the dish. */
+    pexelsCandidates: 8,
+    /** Pexels searches running at once. */
+    pexelsConcurrency: 3,
+    /** Pause after Pexels reports its hourly limit is used up. */
+    pexelsPauseMs: 15 * 60 * 1000,
+    /** Time a photo gets to load before the card keeps the illustration. */
     loadTimeoutMs: 4000,
   },
 } as const;

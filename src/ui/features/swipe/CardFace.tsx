@@ -32,7 +32,7 @@ export function CardFront({ dish, memory, onFlip }: FrontProps) {
   return (
     <div className="flex h-full flex-col">
       <div className="relative min-h-0 flex-[1.2]">
-        <DishArt dish={dish} />
+        <DishArt dish={dish} credit />
         {memoryInfo && MemoryIcon && memory && (
           <span className="absolute top-3 left-3 inline-flex items-center gap-1.5 rounded-full bg-surface/90 px-2.5 py-1 text-xs font-semibold text-ink-2 backdrop-blur">
             <MemoryIcon className="size-3.5" strokeWidth={2.25} />

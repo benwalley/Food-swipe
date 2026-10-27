@@ -7,12 +7,26 @@ const meal = z.enum(MEALS);
 const verdict = z.enum(['nah', 'never', 'into', 'super']);
 const ingredientPref = z.enum(['love', 'meh', 'never']);
 
+const photoSchema = z.object({
+  url: z.string(),
+  thumbUrl: z.string(),
+  source: z.enum(['wikipedia', 'pexels']),
+  author: z.string(),
+  license: z.string(),
+  pageUrl: z.string(),
+});
+
+/** Optional with a null default, so dishes saved before photos existed still load. */
+const nullByDefault = <T extends z.ZodMiniType>(schema: T) =>
+  z._default(z.optional(z.nullable(schema)), null);
+
 export const dishSchema = z.object({
   id: z.string(),
   title: z.string(),
   description: z.string(),
   meal,
-  imageUrl: z.nullable(z.string()),
+  wikipediaTitle: nullByDefault(z.string()),
+  photo: nullByDefault(photoSchema),
   cuisine: z.string(),
   ideaKey: z.string(),
   tags: z.array(z.string()),
